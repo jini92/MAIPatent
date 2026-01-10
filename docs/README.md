@@ -2,6 +2,41 @@
 
 > **n8n & Claude Code 기반 지능형 특허 명세서 작성 자동화 시스템**
 
+![Status](https://img.shields.io/badge/Status-Complete-brightgreen)
+![Phase](https://img.shields.io/badge/Phase-4%2F4-blue)
+![Tests](https://img.shields.io/badge/Tests-42%20Passed-success)
+
+---
+
+## 퀵스타트 가이드
+
+### 1. 환경 설정
+```bash
+# 환경 변수 설정
+cp .env.example .env
+# .env 파일에 API 키 입력 (N8N_API_KEY, ANTHROPIC_API_KEY)
+```
+
+### 2. 테스트 실행
+```bash
+node tests/run-all-tests.js
+```
+
+### 3. 명세서 생성
+1. n8n Cloud에서 WF01 Form 접속
+2. 발명 제안서 입력 및 제출
+3. 자동으로 WF02→WF03→WF04 파이프라인 실행
+4. 검수 완료 후 최종 명세서 출력
+
+### 4. 명세서 변환/검증
+```bash
+# DOCX 변환
+node scripts/convert-patent.js patent.md docx
+
+# KIPO 표준 검증
+node scripts/validate-patent.js patent.md
+```
+
 ---
 
 ## 문서 명명 규칙
@@ -38,6 +73,7 @@
 | [I04](./I04-[Workflow]%20선행기술%20검색.md) | WF02 | KIPRIS 선행기술 검색 워크플로우 |
 | [I05](./I05-[Workflow]%20Human-in-the-loop%20검수.md) | WF04 | Human-in-the-loop 검수 워크플로우 |
 | [I06](./I06-[Implementation]%20Pandoc%20변환%20시스템.md) | Pandoc 변환 | MD→DOCX/PDF 변환 및 KIPO 표준 검증 |
+| [I07](./I07-[Guide]%20배포%20가이드.md) | 배포 가이드 | 환경 설정, n8n 배포, 트러블슈팅 |
 
 ---
 
@@ -126,9 +162,32 @@ MAIPatent/
 │   └── unit/                # 단위 테스트 (42 tests)
 ├── output/                  # 변환된 파일 출력
 ├── tasks.md                 # 프로젝트 태스크 트래킹
-└── CLAUDE.md                # Claude Code 특허 작성 지침
+├── CLAUDE.md                # Claude Code 특허 작성 지침
+├── .env.example             # 환경 변수 템플릿
+└── .gitignore               # Git 제외 패턴
 ```
 
 ---
 
-*최종 수정일: 2026-01-11 (프로젝트 Phase 1-4 완료)*
+## 배포 정보
+
+### n8n Cloud
+- **인스턴스**: `mai-n8n.app.n8n.cloud`
+- **워크플로우**: 4개 (WF01~WF04)
+- **상태**: 운영 중
+
+### 필수 요구사항
+- Node.js v18+
+- Pandoc v3.0+ (문서 변환용)
+- n8n API Key
+- Anthropic API Key (WF03 Claude AI 호출용)
+
+### 선택 요구사항
+- KIPRIS API Key (선행기술 검색, 미설정 시 Mock 데이터)
+- Google Drive (문서 저장, 미구현)
+
+자세한 내용은 [I07 배포 가이드](./I07-[Guide]%20배포%20가이드.md) 참조
+
+---
+
+*최종 수정일: 2026-01-11 (배포 가이드 추가)*
