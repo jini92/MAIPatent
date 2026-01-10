@@ -24,6 +24,7 @@
 | [A02](./A02-[Architecture]%20시스템%20아키텍처.md) | Architecture | 시스템 아키텍처 설계 문서 |
 | [A03](./A03-[Research]%20KIPRIS%20API%20분석.md) | KIPRIS API | KIPRIS 특허 검색 API 분석 |
 | [A04](./A04-[Research]%20특허%20명세서%20구조.md) | 명세서 구조 | KIPO 표준 특허 명세서 구조 분석 |
+| [A05](./A05-[Design]%20상세%20시스템%20설계.md) | 상세 설계 | 에이전틱 엔진 및 파이프라인 상세 설계 |
 
 ---
 
@@ -36,6 +37,7 @@
 | [I03](./I03-[Workflow]%20Claude%20Code%20명세서%20생성.md) | WF03 | Claude Code 명세서 생성 워크플로우 |
 | [I04](./I04-[Workflow]%20선행기술%20검색.md) | WF02 | KIPRIS 선행기술 검색 워크플로우 |
 | [I05](./I05-[Workflow]%20Human-in-the-loop%20검수.md) | WF04 | Human-in-the-loop 검수 워크플로우 |
+| [I06](./I06-[Implementation]%20Pandoc%20변환%20시스템.md) | Pandoc 변환 | MD→DOCX/PDF 변환 및 KIPO 표준 검증 |
 
 ---
 
@@ -95,10 +97,13 @@
 |-------|------|--------|
 | Phase 1: 초기 설정 | 완료 | 100% |
 | Phase 2: 워크플로우 구축 | 완료 | 100% |
-| Phase 3: 포맷팅 및 출력 | 대기 | 0% |
-| Phase 4: 테스트 및 품질 관리 | 진행중 | 30% |
+| Phase 3: 포맷팅 및 출력 | 완료 | 100% |
+| Phase 4: 테스트 및 품질 관리 | 완료 | 100% |
 
 ### 최근 업데이트
+- **2026-01-11**: Phase 4 완료 - 단위 테스트 42개 구현 (100% 통과)
+- **2026-01-11**: Phase 3 완료 - Pandoc 변환 시스템 및 KIPO 표준 검증 구현
+- **2026-01-11**: A05 상세 시스템 설계 문서 작성 (에이전틱 엔진, 보안, 파이프라인)
 - **2026-01-11**: E2E 파이프라인 테스트 완료 (WF02→WF03→WF04)
 - **2026-01-10**: Phase 2 워크플로우 구축 완료
 
@@ -112,11 +117,18 @@ MAIPatent/
 ├── prompts/                 # AI 프롬프트 템플릿
 ├── templates/               # KIPO 명세서 템플릿
 ├── workflows/               # n8n 워크플로우 JSON
+├── scripts/                 # 변환 및 검증 스크립트
+│   ├── convert-patent.js    # MD → DOCX/PDF 변환
+│   └── validate-patent.js   # KIPO 표준 검증
 ├── tests/                   # 테스트 데이터 및 스크립트
+│   ├── run-all-tests.js     # 전체 테스트 실행기
+│   ├── sample-patent-spec.md# 샘플 특허 명세서
+│   └── unit/                # 단위 테스트 (42 tests)
+├── output/                  # 변환된 파일 출력
 ├── tasks.md                 # 프로젝트 태스크 트래킹
 └── CLAUDE.md                # Claude Code 특허 작성 지침
 ```
 
 ---
 
-*최종 수정일: 2026-01-11*
+*최종 수정일: 2026-01-11 (프로젝트 Phase 1-4 완료)*

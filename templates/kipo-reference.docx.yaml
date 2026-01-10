@@ -1,0 +1,96 @@
+# KIPO DOCX 참조 템플릿 설정
+# Pandoc에서 사용할 스타일 정의
+
+metadata:
+  title: "KIPO 특허 명세서 참조 템플릿"
+  author: "MAIPatent System"
+  version: "1.0.0"
+  created: "2026-01-11"
+
+# 폰트 설정
+fonts:
+  main: "맑은 고딕"
+  fallback: "Malgun Gothic"
+  code: "Consolas"
+
+# 페이지 설정
+page_setup:
+  size: A4
+  orientation: portrait
+  margins:
+    top: 2.5cm
+    bottom: 2.5cm
+    left: 2.5cm
+    right: 2.0cm
+
+# 단락 스타일
+paragraph_styles:
+  heading1:
+    font_size: 14pt
+    bold: true
+    space_before: 12pt
+    space_after: 6pt
+
+  heading2:
+    font_size: 12pt
+    bold: true
+    space_before: 10pt
+    space_after: 4pt
+
+  body_text:
+    font_size: 11pt
+    line_spacing: 1.5
+    first_line_indent: 0pt
+
+  kipo_section:
+    font_size: 11pt
+    bold: true
+    space_before: 12pt
+    space_after: 6pt
+
+# KIPO 식별 기호 스타일
+kipo_markers:
+  pattern: "【*】"
+  style:
+    font_size: 11pt
+    bold: true
+    space_before: 12pt
+    space_after: 6pt
+
+# 청구항 스타일
+claims_style:
+  numbering_format: "【청구항 {n}】"
+  indent: 0pt
+  space_between: 6pt
+  dependent_indent: 0pt
+
+# 도면 부호 스타일
+drawing_reference:
+  format: "({number})"
+  first_mention: "명칭({number})"
+  subsequent_mention: "상기 명칭({number})"
+
+# Pandoc 변환 옵션
+pandoc_options:
+  from: markdown
+  to: docx
+  reference_doc: null  # 실제 DOCX 참조 파일 경로
+  standalone: true
+  toc: false
+  number_sections: false
+
+# 변환 명령어 템플릿
+conversion_commands:
+  md_to_docx: |
+    pandoc "{input}" -o "{output}" \
+      --from=markdown \
+      --to=docx \
+      --standalone
+
+  md_to_pdf: |
+    pandoc "{input}" -o "{output}" \
+      --from=markdown \
+      --to=pdf \
+      --pdf-engine=xelatex \
+      -V mainfont="Malgun Gothic" \
+      -V geometry:margin=2.5cm
