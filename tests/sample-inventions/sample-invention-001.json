@@ -1,0 +1,106 @@
+{
+  "invention_id": "INV-TEST-001",
+  "metadata": {
+    "created_at": "2026-01-10T00:00:00Z",
+    "inventor": "홍길동",
+    "contact": "hong@example.com",
+    "status": "draft"
+  },
+  "invention_data": {
+    "title": "인공지능을 이용한 특허 명세서 자동 생성 시스템",
+    "technical_field": "인공지능, 자연어 처리, 특허 문서 자동화",
+    "background": {
+      "prior_art": "종래에는 변리사가 발명자로부터 발명 제안서를 받아 수작업으로 특허 명세서를 작성하였다. 이 과정에서 상당한 시간이 소요되고, 작성자의 숙련도에 따라 품질 편차가 발생하며, 용어 불일치 등의 인적 오류가 발생할 수 있다.",
+      "problem": "특허 명세서 작성에 많은 시간과 비용이 소요되며, 품질이 균일하지 않고 인적 오류가 발생하는 문제가 있다.",
+      "existing_solutions": [
+        "수동 작성 방식",
+        "단순 템플릿 기반 문서 생성",
+        "키워드 추출 기반 검색 시스템"
+      ]
+    },
+    "solution": {
+      "technical_means": "대규모 언어 모델(LLM)을 활용하여 발명 제안서를 분석하고, 선행기술 검색 결과를 바탕으로 청구항, 상세 설명, 도면 설명을 순차적으로 생성하는 파이프라인을 구축한다.",
+      "key_features": [
+        "섹션별 순차 생성 (청구항 → 상세설명 → 도면설명)",
+        "선행기술 자동 검색 및 컨텍스트 보강",
+        "Extended Thinking을 활용한 청구항 범위 최적화",
+        "KIPO 표준 형식 자동 포맷팅",
+        "품질 검증 및 Human-in-the-loop 검수 프로세스"
+      ],
+      "implementation": {
+        "modules": [
+          {
+            "name": "입력 모듈",
+            "reference": "100",
+            "description": "발명 제안서를 수신하고 검증하는 모듈"
+          },
+          {
+            "name": "선행기술 분석 모듈",
+            "reference": "200",
+            "description": "KIPRIS API를 통해 선행기술을 검색하고 분석하는 모듈"
+          },
+          {
+            "name": "명세서 생성 모듈",
+            "reference": "300",
+            "description": "Claude Code를 활용하여 명세서 각 섹션을 생성하는 모듈"
+          },
+          {
+            "name": "품질 검증 모듈",
+            "reference": "400",
+            "description": "생성된 명세서의 품질을 검증하는 모듈"
+          },
+          {
+            "name": "출력 모듈",
+            "reference": "500",
+            "description": "KIPO 표준 형식으로 포맷팅하여 출력하는 모듈"
+          }
+        ]
+      }
+    },
+    "effects": [
+      "명세서 작성 시간을 80% 이상 단축할 수 있다.",
+      "용어 불일치, 전제 기초 결여 등의 논리적 오류를 최소화할 수 있다.",
+      "숙련된 변리사 수준의 일관된 품질을 유지할 수 있다.",
+      "선행기술 대비 신규성과 진보성이 극대화된 청구항을 작성할 수 있다."
+    ],
+    "drawings": [
+      {
+        "figure_number": "도 1",
+        "type": "block",
+        "description": "본 발명의 전체 시스템 구성",
+        "components": ["100", "200", "300", "400", "500"]
+      },
+      {
+        "figure_number": "도 2",
+        "type": "flowchart",
+        "description": "명세서 자동 생성 방법의 전체 흐름",
+        "components": ["S100", "S200", "S300", "S400", "S500"]
+      },
+      {
+        "figure_number": "도 3",
+        "type": "detail",
+        "description": "청구항 생성 프로세스 상세",
+        "components": ["310", "320", "330"]
+      },
+      {
+        "figure_number": "도 4",
+        "type": "screen",
+        "description": "Human-in-the-loop 검수 화면",
+        "components": []
+      }
+    ]
+  },
+  "ipc_codes": [
+    "G06F 40/166",
+    "G06F 40/20",
+    "G06N 3/08"
+  ],
+  "keywords": [
+    "인공지능",
+    "특허",
+    "명세서",
+    "자동 생성",
+    "자연어 처리",
+    "LLM"
+  ]
+}

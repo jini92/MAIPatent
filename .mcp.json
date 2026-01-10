@@ -1,0 +1,40 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "cmd.exe",
+      "args": ["/c", "npx", "-y", "@playwright/mcp"],
+      "env": {},
+      "description": "브라우저 자동화 - 웹 페이지 스크래핑, 스크린샷, E2E 테스트"
+    },
+    "fetcher": {
+      "command": "cmd.exe",
+      "args": ["/c", "npx", "-y", "fetcher-mcp"],
+      "env": {},
+      "description": "웹 콘텐츠 추출 - Readability 알고리즘 기반"
+    },
+    "context7": {
+      "command": "cmd.exe",
+      "args": ["/c", "npx", "-y", "@upstash/context7-mcp"],
+      "env": {},
+      "description": "최신 라이브러리 문서 및 API 정보 제공 - 프레임워크와 라이브러리의 최신 버전 정보를 실시간으로 가져와 정확한 코딩 지원"
+    },
+    "magic": {
+      "command": "cmd.exe",
+      "args": ["/c", "npx", "-y", "@magicuidesign/mcp@latest"],
+      "env": {},
+      "description": "UI 컴포넌트 생성 - Magic UI 디자인 시스템 기반 모던 UI 컴포넌트 생성"
+    },
+    "n8n-mcp": {
+      "command": "cmd.exe",
+      "args": ["/c", "npx", "-y", "n8n-mcp"],
+      "env": {
+        "MCP_MODE": "stdio",
+        "LOG_LEVEL": "error",
+        "DISABLE_CONSOLE_OUTPUT": "true",
+        "N8N_API_URL": "https://mai-n8n.app.n8n.cloud",
+        "N8N_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZTJkNDA0ZC0xMjc4LTQwZjMtOTIyZS0yYzkzMjA0NWNiYTUiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzY4MDAwMDI1fQ.xq2O35sOErkrEdW9Ktnohe4XNE1f38rTqdmQAGBFU5g"
+      },
+      "description": "n8n 워크플로우 자동화 - AI 프롬프트로 n8n 워크플로우 생성/수정"
+    }
+  }
+}
