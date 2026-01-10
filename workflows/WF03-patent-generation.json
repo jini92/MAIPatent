@@ -1,0 +1,144 @@
+{
+  "name": "WF03-명세서생성",
+  "id": "7kZOpw4nYXj5aWIG",
+  "description": "Claude Code 기반 특허 명세서 자동 생성 워크플로우 - 청구항 → 상세설명 → 도면설명 순차 생성",
+  "active": false,
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "name": "명세서 생성 Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wf03-generate-patent-spec",
+        "responseMode": "lastNode"
+      }
+    },
+    {
+      "id": "load-context",
+      "name": "컨텍스트 로드",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0]
+    },
+    {
+      "id": "prepare-claim-prompt",
+      "name": "청구항 프롬프트 준비",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0]
+    },
+    {
+      "id": "generate-claims",
+      "name": "청구항 생성 (AI)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [660, 0]
+    },
+    {
+      "id": "prepare-description-prompt",
+      "name": "상세설명 프롬프트 준비",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 0]
+    },
+    {
+      "id": "generate-description",
+      "name": "상세설명 생성 (AI)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [1100, 0]
+    },
+    {
+      "id": "prepare-drawing-prompt",
+      "name": "도면설명 프롬프트 준비",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 0]
+    },
+    {
+      "id": "generate-drawing-desc",
+      "name": "도면설명 생성 (AI)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [1540, 0]
+    },
+    {
+      "id": "format-kipo",
+      "name": "KIPO 포맷 조립",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 0]
+    },
+    {
+      "id": "set-output",
+      "name": "출력 데이터 설정",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1980, 0]
+    },
+    {
+      "id": "call-wf04",
+      "name": "WF04 검수요청 호출",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2200, 0],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.N8N_WEBHOOK_URL }}/wf04-review-request",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "명세서 생성 Webhook": {
+      "main": [[{"node": "컨텍스트 로드", "type": "main", "index": 0}]]
+    },
+    "컨텍스트 로드": {
+      "main": [[{"node": "청구항 프롬프트 준비", "type": "main", "index": 0}]]
+    },
+    "청구항 프롬프트 준비": {
+      "main": [[{"node": "청구항 생성 (AI)", "type": "main", "index": 0}]]
+    },
+    "청구항 생성 (AI)": {
+      "main": [[{"node": "상세설명 프롬프트 준비", "type": "main", "index": 0}]]
+    },
+    "상세설명 프롬프트 준비": {
+      "main": [[{"node": "상세설명 생성 (AI)", "type": "main", "index": 0}]]
+    },
+    "상세설명 생성 (AI)": {
+      "main": [[{"node": "도면설명 프롬프트 준비", "type": "main", "index": 0}]]
+    },
+    "도면설명 프롬프트 준비": {
+      "main": [[{"node": "도면설명 생성 (AI)", "type": "main", "index": 0}]]
+    },
+    "도면설명 생성 (AI)": {
+      "main": [[{"node": "KIPO 포맷 조립", "type": "main", "index": 0}]]
+    },
+    "KIPO 포맷 조립": {
+      "main": [[{"node": "출력 데이터 설정", "type": "main", "index": 0}]]
+    },
+    "출력 데이터 설정": {
+      "main": [[{"node": "WF04 검수요청 호출", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "version": "1.1.0",
+    "created": "2026-01-10",
+    "updated": "2026-01-10",
+    "project": "MAIPatent",
+    "workflow_sequence": 3,
+    "next_workflow": "WF04-human-review",
+    "trigger_connection": "HTTP Request to WF04 Webhook",
+    "ai_model": "gpt-4o",
+    "generation_order": ["claims", "description", "drawing_description"]
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "name": "WF02-선행기술검색",
+  "id": "iFAXSkfG5Rh0b8Qh",
+  "description": "KIPRIS API 기반 선행기술 검색 및 컨텍스트 생성 워크플로우",
+  "active": false,
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "name": "선행기술 검색 Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wf02-prior-art-search",
+        "responseMode": "lastNode"
+      }
+    },
+    {
+      "id": "prepare-query",
+      "name": "검색 쿼리 준비",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0]
+    },
+    {
+      "id": "check-api-key",
+      "name": "API 키 확인",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [440, 0]
+    },
+    {
+      "id": "kipris-api",
+      "name": "KIPRIS API 호출",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, -100]
+    },
+    {
+      "id": "mock-data",
+      "name": "Mock 선행기술 데이터",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 100]
+    },
+    {
+      "id": "parse-xml",
+      "name": "XML 파싱",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, -100]
+    },
+    {
+      "id": "merge-results",
+      "name": "결과 병합",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1100, 0]
+    },
+    {
+      "id": "calc-relevance",
+      "name": "관련도 점수 계산",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 0]
+    },
+    {
+      "id": "build-context",
+      "name": "컨텍스트 생성",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 0]
+    },
+    {
+      "id": "set-output",
+      "name": "출력 데이터 설정",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1760, 0]
+    },
+    {
+      "id": "call-wf03",
+      "name": "WF03 명세서생성 호출",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1980, 0],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.N8N_WEBHOOK_URL }}/wf03-generate-patent-spec",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "선행기술 검색 Webhook": {
+      "main": [[{ "node": "검색 쿼리 준비", "type": "main", "index": 0 }]]
+    },
+    "검색 쿼리 준비": {
+      "main": [[{ "node": "API 키 확인", "type": "main", "index": 0 }]]
+    },
+    "API 키 확인": {
+      "main": [
+        [{ "node": "KIPRIS API 호출", "type": "main", "index": 0 }],
+        [{ "node": "Mock 선행기술 데이터", "type": "main", "index": 0 }]
+      ]
+    },
+    "KIPRIS API 호출": {
+      "main": [[{ "node": "XML 파싱", "type": "main", "index": 0 }]]
+    },
+    "XML 파싱": {
+      "main": [[{ "node": "결과 병합", "type": "main", "index": 0 }]]
+    },
+    "Mock 선행기술 데이터": {
+      "main": [[{ "node": "결과 병합", "type": "main", "index": 1 }]]
+    },
+    "결과 병합": {
+      "main": [[{ "node": "관련도 점수 계산", "type": "main", "index": 0 }]]
+    },
+    "관련도 점수 계산": {
+      "main": [[{ "node": "컨텍스트 생성", "type": "main", "index": 0 }]]
+    },
+    "컨텍스트 생성": {
+      "main": [[{ "node": "출력 데이터 설정", "type": "main", "index": 0 }]]
+    },
+    "출력 데이터 설정": {
+      "main": [[{ "node": "WF03 명세서생성 호출", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "version": "1.1.0",
+    "created": "2026-01-10",
+    "updated": "2026-01-10",
+    "project": "MAIPatent",
+    "workflow_sequence": 2,
+    "next_workflow": "WF03-patent-generation",
+    "trigger_connection": "HTTP Request to WF03 Webhook"
+  }
+}

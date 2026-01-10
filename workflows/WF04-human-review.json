@@ -1,0 +1,117 @@
+{
+  "name": "WF04-명세서검수",
+  "id": "zSXpWko9op4hnSBr",
+  "description": "Human-in-the-loop 특허 명세서 검수 워크플로우 - 승인/수정요청/반려 처리",
+  "active": false,
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "name": "검수 요청 Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wf04-review-request",
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "id": "prepare-review",
+      "name": "검수 데이터 준비",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0]
+    },
+    {
+      "id": "review-form",
+      "name": "검수 Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [440, 0],
+      "parameters": {
+        "formTitle": "특허 명세서 검수",
+        "formFields": ["검수 ID", "승인 상태", "청구항 피드백", "상세설명 피드백", "도면설명 피드백", "전체 의견", "수정 우선순위"]
+      }
+    },
+    {
+      "id": "check-approval",
+      "name": "승인 여부 확인",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [660, 0]
+    },
+    {
+      "id": "process-approval",
+      "name": "승인 처리",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, -100]
+    },
+    {
+      "id": "process-revision",
+      "name": "수정 요청 처리",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 100]
+    },
+    {
+      "id": "set-approved-output",
+      "name": "승인 완료 출력",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1100, -100]
+    },
+    {
+      "id": "set-revision-output",
+      "name": "수정 요청 출력",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1100, 100]
+    },
+    {
+      "id": "merge-output",
+      "name": "결과 병합",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1320, 0]
+    }
+  ],
+  "connections": {
+    "검수 요청 Webhook": {
+      "main": [[{"node": "검수 데이터 준비", "type": "main", "index": 0}]]
+    },
+    "검수 Form": {
+      "main": [[{"node": "승인 여부 확인", "type": "main", "index": 0}]]
+    },
+    "승인 여부 확인": {
+      "main": [
+        [{"node": "승인 처리", "type": "main", "index": 0}],
+        [{"node": "수정 요청 처리", "type": "main", "index": 0}]
+      ]
+    },
+    "승인 처리": {
+      "main": [[{"node": "승인 완료 출력", "type": "main", "index": 0}]]
+    },
+    "수정 요청 처리": {
+      "main": [[{"node": "수정 요청 출력", "type": "main", "index": 0}]]
+    },
+    "승인 완료 출력": {
+      "main": [[{"node": "결과 병합", "type": "main", "index": 0}]]
+    },
+    "수정 요청 출력": {
+      "main": [[{"node": "결과 병합", "type": "main", "index": 1}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "version": "1.0.0",
+    "created": "2026-01-10",
+    "project": "MAIPatent",
+    "workflow_sequence": 4,
+    "review_options": ["승인", "수정 필요", "반려"],
+    "feedback_fields": ["청구항", "상세설명", "도면설명", "전체 의견"]
+  }
+}

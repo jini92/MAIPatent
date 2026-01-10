@@ -1,0 +1,241 @@
+{
+  "name": "WF01-발명제안서입력",
+  "id": "galbpC91RCA90yyi",
+  "description": "발명 제안서 입력 및 검증 워크플로우 - MAIPatent 파이프라인의 첫 번째 단계",
+  "active": false,
+  "nodes": [
+    {
+      "id": "form-trigger",
+      "name": "발명제안서 Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [0, 0],
+      "parameters": {
+        "formTitle": "발명 제안서 입력",
+        "formDescription": "특허 명세서 자동 생성을 위한 발명 제안서를 입력해주세요.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "발명의 명칭",
+              "fieldType": "text",
+              "requiredField": true,
+              "placeholder": "예: 인공지능 기반 특허 명세서 자동 생성 시스템"
+            },
+            {
+              "fieldLabel": "기술분야",
+              "fieldType": "text",
+              "requiredField": true,
+              "placeholder": "예: 인공지능, 자연어처리, 특허 자동화"
+            },
+            {
+              "fieldLabel": "해결하려는 과제",
+              "fieldType": "textarea",
+              "requiredField": true,
+              "placeholder": "발명이 해결하고자 하는 기술적 과제를 상세히 기술해주세요."
+            },
+            {
+              "fieldLabel": "발명의 핵심 구성",
+              "fieldType": "textarea",
+              "requiredField": true,
+              "placeholder": "발명의 핵심적인 기술적 구성을 기술해주세요."
+            },
+            {
+              "fieldLabel": "발명의 효과",
+              "fieldType": "textarea",
+              "requiredField": true,
+              "placeholder": "발명으로 인해 얻을 수 있는 기술적 효과를 기술해주세요."
+            },
+            {
+              "fieldLabel": "출원인",
+              "fieldType": "text",
+              "requiredField": true,
+              "placeholder": "출원인 이름"
+            },
+            {
+              "fieldLabel": "발명자",
+              "fieldType": "text",
+              "requiredField": true,
+              "placeholder": "발명자 이름"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "validate-code",
+      "name": "데이터 검증",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0],
+      "parameters": {
+        "jsCode": "// 발명 제안서 검증\nconst input = $input.first().json;\n\nconst errors = [];\n\n// 필수 필드 검증\nconst requiredFields = [\n  { key: '발명의 명칭', label: '발명의 명칭' },\n  { key: '기술분야', label: '기술분야' },\n  { key: '해결하려는 과제', label: '해결하려는 과제' },\n  { key: '발명의 핵심 구성', label: '발명의 핵심 구성' },\n  { key: '발명의 효과', label: '발명의 효과' },\n  { key: '출원인', label: '출원인' },\n  { key: '발명자', label: '발명자' }\n];\n\nfor (const field of requiredFields) {\n  if (!input[field.key] || input[field.key].trim() === '') {\n    errors.push(`${field.label}은(는) 필수 입력 항목입니다.`);\n  }\n}\n\n// 최소 길이 검증\nif (input['해결하려는 과제'] && input['해결하려는 과제'].length < 50) {\n  errors.push('해결하려는 과제는 최소 50자 이상 입력해주세요.');\n}\n\nif (input['발명의 핵심 구성'] && input['발명의 핵심 구성'].length < 100) {\n  errors.push('발명의 핵심 구성은 최소 100자 이상 입력해주세요.');\n}\n\n// 검증 결과 반환\nif (errors.length > 0) {\n  return [{\n    json: {\n      valid: false,\n      errors: errors,\n      input: input\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    valid: true,\n    data: input\n  }\n}];"
+      }
+    },
+    {
+      "id": "if-valid",
+      "name": "검증 결과 분기",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "valid-check",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "enrich-code",
+      "name": "데이터 보강",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, -100],
+      "parameters": {
+        "jsCode": "// 데이터 보강: IPC 코드 추천, 키워드 추출\nconst data = $input.first().json.data;\n\n// 키워드 추출\nconst allText = `${data['발명의 명칭']} ${data['기술분야']} ${data['해결하려는 과제']}`;\nconst words = allText.split(/\\s+/);\nconst stopWords = ['및', '또는', '의', '을', '를', '이', '가', '은', '는', '에', '로', '으로', '하는', '있다', '된다'];\nconst keywords = [...new Set(words)]\n  .filter(w => w.length > 1 && !stopWords.includes(w))\n  .slice(0, 10);\n\n// IPC 코드 추천\nconst ipcMap = {\n  '인공지능': 'G06N',\n  '자연어처리': 'G06F 40',\n  '특허': 'G06Q 50/18',\n  '자동화': 'G05B 19',\n  '딥러닝': 'G06N 3/08',\n  '머신러닝': 'G06N 20',\n  '블록체인': 'G06F 21',\n  '클라우드': 'G06F 9',\n  '보안': 'G06F 21',\n  '데이터': 'G06F 16'\n};\n\nconst technicalField = data['기술분야'] || '';\nconst suggestedIpc = [];\nfor (const [keyword, ipc] of Object.entries(ipcMap)) {\n  if (technicalField.includes(keyword)) {\n    suggestedIpc.push(ipc);\n  }\n}\nif (suggestedIpc.length === 0) suggestedIpc.push('G06F');\n\n// 메타데이터 추가\nconst submissionId = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;\n\nconst enrichedData = {\n  submission_id: submissionId,\n  invention_title: data['발명의 명칭'],\n  technical_field: data['기술분야'],\n  problem_to_solve: data['해결하려는 과제'],\n  solution_description: data['발명의 핵심 구성'],\n  advantages: data['발명의 효과'],\n  applicant_name: data['출원인'],\n  inventor_name: data['발명자'],\n  keywords: keywords,\n  suggested_ipc: suggestedIpc,\n  submission_date: new Date().toISOString(),\n  status: 'pending'\n};\n\nreturn [{ json: enrichedData }];"
+      }
+    },
+    {
+      "id": "set-output",
+      "name": "출력 데이터 설정",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [880, -100],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "submission_id",
+              "name": "submission_id",
+              "value": "={{ $json.submission_id }}",
+              "type": "string"
+            },
+            {
+              "id": "invention_title",
+              "name": "invention_title",
+              "value": "={{ $json.invention_title }}",
+              "type": "string"
+            },
+            {
+              "id": "keywords",
+              "name": "keywords",
+              "value": "={{ $json.keywords }}",
+              "type": "array"
+            },
+            {
+              "id": "suggested_ipc",
+              "name": "suggested_ipc",
+              "value": "={{ $json.suggested_ipc }}",
+              "type": "array"
+            },
+            {
+              "id": "status",
+              "name": "status",
+              "value": "submitted",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true
+      }
+    },
+    {
+      "id": "error-response",
+      "name": "오류 응답",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [660, 100],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "message",
+              "name": "message",
+              "value": "입력 데이터 검증에 실패했습니다.",
+              "type": "string"
+            },
+            {
+              "id": "errors",
+              "name": "errors",
+              "value": "={{ $json.errors }}",
+              "type": "array"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "call-wf02",
+      "name": "WF02 선행기술검색 호출",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, -100],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.N8N_WEBHOOK_URL }}/wf02-prior-art-search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "발명제안서 Form": {
+      "main": [[{ "node": "데이터 검증", "type": "main", "index": 0 }]]
+    },
+    "데이터 검증": {
+      "main": [[{ "node": "검증 결과 분기", "type": "main", "index": 0 }]]
+    },
+    "검증 결과 분기": {
+      "main": [
+        [{ "node": "데이터 보강", "type": "main", "index": 0 }],
+        [{ "node": "오류 응답", "type": "main", "index": 0 }]
+      ]
+    },
+    "데이터 보강": {
+      "main": [[{ "node": "출력 데이터 설정", "type": "main", "index": 0 }]]
+    },
+    "출력 데이터 설정": {
+      "main": [[{ "node": "WF02 선행기술검색 호출", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "version": "1.1.0",
+    "created": "2026-01-10",
+    "updated": "2026-01-10",
+    "project": "MAIPatent",
+    "workflow_sequence": 1,
+    "next_workflow": "WF02-prior-art-search",
+    "trigger_connection": "HTTP Request to WF02 Webhook"
+  }
+}
