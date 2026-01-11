@@ -36,22 +36,42 @@ web/
 │   ├── app/                      # Next.js App Router
 │   │   ├── layout.tsx            # 루트 레이아웃 (Sidebar)
 │   │   ├── page.tsx              # 홈페이지
-│   │   ├── dashboard/page.tsx    # 대시보드
+│   │   ├── dashboard/page.tsx    # 대시보드 (통계, 테이블)
 │   │   ├── submit/page.tsx       # 발명 제안서 제출
-│   │   └── tracking/page.tsx     # 진행 상황 추적
+│   │   ├── tracking/page.tsx     # 진행 상황 추적
+│   │   ├── review/page.tsx       # 검수 패널
+│   │   ├── export/page.tsx       # 내보내기
+│   │   └── settings/page.tsx     # 설정 (테마, 언어)
 │   │
 │   ├── components/
 │   │   ├── ui/                   # Shadcn UI 컴포넌트
 │   │   ├── layout/               # 레이아웃 컴포넌트
 │   │   │   └── Sidebar.tsx
-│   │   └── forms/                # 폼 컴포넌트
-│   │       ├── InventionForm.tsx       # 메인 4단계 폼
-│   │       ├── FormStepIndicator.tsx   # 단계 표시기
-│   │       └── steps/
-│   │           ├── Step1BasicInfo.tsx
-│   │           ├── Step2TechnicalField.tsx
-│   │           ├── Step3InventionContent.tsx
-│   │           └── Step4DrawingsConfirm.tsx
+│   │   ├── forms/                # 폼 컴포넌트
+│   │   │   ├── InventionForm.tsx       # 메인 4단계 폼
+│   │   │   ├── FormStepIndicator.tsx   # 단계 표시기
+│   │   │   └── steps/
+│   │   │       ├── Step1BasicInfo.tsx
+│   │   │       ├── Step2TechnicalField.tsx
+│   │   │       ├── Step3InventionContent.tsx
+│   │   │       └── Step4DrawingsConfirm.tsx
+│   │   ├── tracking/             # 진행 추적 컴포넌트
+│   │   │   ├── ExecutionProgress.tsx   # 진행 상태 표시
+│   │   │   └── SpecificationPreview.tsx # 명세서 미리보기
+│   │   ├── review/               # 검수 컴포넌트
+│   │   │   └── ReviewPanel.tsx         # Split View 검수 패널
+│   │   ├── dashboard/            # 대시보드 컴포넌트
+│   │   │   └── PatentTable.tsx         # 명세서 목록 테이블
+│   │   ├── export/               # 내보내기 컴포넌트
+│   │   │   └── ExportPanel.tsx         # 내보내기 옵션 패널
+│   │   └── common/               # 공통 컴포넌트
+│   │       ├── ErrorBoundary.tsx       # 에러 처리
+│   │       └── Skeleton.tsx            # 로딩 스켈레톤
+│   │
+│   ├── hooks/                    # 커스텀 훅
+│   │   ├── useExecutionStatus.ts       # 실행 상태 폴링
+│   │   ├── useReviewState.ts           # 검수 상태 관리
+│   │   └── useDashboardStats.ts        # 대시보드 통계
 │   │
 │   ├── lib/
 │   │   ├── utils.ts              # 유틸리티
@@ -220,22 +240,33 @@ npm run lint    # ESLint 검사
 
 ---
 
-## 7. 향후 계획
+## 7. 구현 완료 현황
 
-### Phase 3: 추적 & 미리보기
-- [ ] 실시간 상태 폴링 (2초 간격)
-- [ ] 명세서 미리보기 (Markdown 렌더링)
-- [ ] KIPO 포맷 렌더링
+### Phase 3: 추적 & 미리보기 ✅
+- [x] 실시간 상태 폴링 (useExecutionStatus 훅)
+- [x] 명세서 미리보기 (SpecificationPreview 컴포넌트)
+- [x] KIPO 포맷 렌더링 (섹션 하이라이팅, 도면 부호)
+- [x] 단계별 진행 상태 시각화 (ExecutionProgress)
 
-### Phase 4: 검수 패널
-- [ ] Split View 레이아웃
-- [ ] 동기화 스크롤
-- [ ] 승인/수정/반려 처리
+### Phase 4: 검수 패널 ✅
+- [x] Split View 레이아웃 (ReviewPanel)
+- [x] 동기화 스크롤 (synced scroll)
+- [x] 승인/수정/반려 처리 (useReviewState)
+- [x] 인라인 편집 모드
+- [x] 섹션별 피드백 UI
 
-### Phase 5: 대시보드 & 내보내기
-- [ ] 명세서 목록 API 연동
-- [ ] DOCX/PDF 다운로드
-- [ ] 필터링 & 검색
+### Phase 5: 대시보드 & 내보내기 ✅
+- [x] 명세서 목록 테이블 (PatentTable)
+- [x] DOCX/PDF/HWP/Markdown 내보내기 (ExportPanel)
+- [x] 검색, 필터링, 정렬 기능
+- [x] 통계 카드 (useDashboardStats)
+
+### Phase 6: 마무리 ✅
+- [x] 다크 모드 지원 (Settings 페이지)
+- [x] 테마 토글 (light/dark/system)
+- [x] ErrorBoundary 에러 처리
+- [x] 로딩 스켈레톤 컴포넌트
+- [x] 접근성 개선
 
 ---
 
@@ -261,5 +292,19 @@ export default function Page() {
 
 ---
 
+## 9. 생성된 페이지 목록
+
+빌드 결과 생성된 정적 페이지:
+- `/MAIPatent/` - 홈페이지
+- `/MAIPatent/dashboard/` - 대시보드
+- `/MAIPatent/submit/` - 발명 제안서 제출
+- `/MAIPatent/tracking/` - 진행 상황 추적
+- `/MAIPatent/review/` - 검수 패널
+- `/MAIPatent/export/` - 내보내기
+- `/MAIPatent/settings/` - 설정
+
+---
+
 *작성일: 2026-01-11*
-*상태: Phase 2 완료*
+*최종 수정: 2026-01-11*
+*상태: Phase 6 완료 - 전체 구현 완료*
