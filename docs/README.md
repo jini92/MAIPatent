@@ -74,6 +74,7 @@ node scripts/validate-patent.js patent.md
 | [I05](./I05-[Workflow]%20Human-in-the-loop%20검수.md) | WF04 | Human-in-the-loop 검수 워크플로우 |
 | [I06](./I06-[Implementation]%20Pandoc%20변환%20시스템.md) | Pandoc 변환 | MD→DOCX/PDF 변환 및 KIPO 표준 검증 |
 | [I07](./I07-[Guide]%20배포%20가이드.md) | 배포 가이드 | 환경 설정, n8n 배포, 트러블슈팅 |
+| [I08](./I08-[Implementation]%20Web%20UI%20구현.md) | Web UI | 웹 프론트엔드 구현 (Next.js + Shadcn/UI) |
 
 ---
 
@@ -135,8 +136,21 @@ node scripts/validate-patent.js patent.md
 | Phase 2: 워크플로우 구축 | 완료 | 100% |
 | Phase 3: 포맷팅 및 출력 | 완료 | 100% |
 | Phase 4: 테스트 및 품질 관리 | 완료 | 100% |
+| Phase 5: 웹 UI 구현 | 진행 중 | 33% |
+
+### Web UI 진행 상황
+| 단계 | 상태 |
+|------|------|
+| Phase 1: 기반 구축 | 완료 |
+| Phase 2: 핵심 폼 | 완료 |
+| Phase 3: 추적 & 미리보기 | 대기 |
+| Phase 4: 검수 패널 | 대기 |
+| Phase 5: 대시보드 & 내보내기 | 대기 |
+| Phase 6: 마무리 | 대기 |
 
 ### 최근 업데이트
+- **2026-01-11**: Web UI Phase 2 완료 - InventionForm 4단계 폼 (React Hook Form + Zod)
+- **2026-01-11**: Web UI Phase 1 완료 - Next.js 14 프로젝트 초기화, Shadcn/UI 설정
 - **2026-01-11**: Phase 4 완료 - 단위 테스트 42개 구현 (100% 통과)
 - **2026-01-11**: Phase 3 완료 - Pandoc 변환 시스템 및 KIPO 표준 검증 구현
 - **2026-01-11**: A05 상세 시스템 설계 문서 작성 (에이전틱 엔진, 보안, 파이프라인)
@@ -150,6 +164,13 @@ node scripts/validate-patent.js patent.md
 ```
 MAIPatent/
 ├── docs/                    # 문서 폴더 (현재 위치)
+├── web/                     # 웹 프론트엔드 (Next.js 14)
+│   ├── src/
+│   │   ├── app/             # App Router 페이지
+│   │   ├── components/      # React 컴포넌트
+│   │   ├── lib/             # 유틸리티 및 API 클라이언트
+│   │   └── types/           # TypeScript/Zod 타입
+│   └── package.json
 ├── prompts/                 # AI 프롬프트 템플릿
 ├── templates/               # KIPO 명세서 템플릿
 ├── workflows/               # n8n 워크플로우 JSON
@@ -190,4 +211,4 @@ MAIPatent/
 
 ---
 
-*최종 수정일: 2026-01-11 (배포 가이드 추가)*
+*최종 수정일: 2026-01-11 (Web UI Phase 2 완료, I08 문서 추가)*
