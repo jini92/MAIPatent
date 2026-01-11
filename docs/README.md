@@ -46,6 +46,7 @@ node scripts/validate-patent.js patent.md
 | `A##` | Analysis/Architecture/Research | 분석, 아키텍처, 연구 문서 |
 | `I##` | Implementation/Integration/Guide | 구현, 통합, 가이드 문서 |
 | `T##` | Test | 테스트 문서 |
+| `P##` | Plan | 계획 문서 |
 | `D##` | DevLog | 개발 로그 |
 | `R##` | Reference | 참조 문서 |
 
@@ -75,6 +76,8 @@ node scripts/validate-patent.js patent.md
 | [I06](./I06-[Implementation]%20Pandoc%20변환%20시스템.md) | Pandoc 변환 | MD→DOCX/PDF 변환 및 KIPO 표준 검증 |
 | [I07](./I07-[Guide]%20배포%20가이드.md) | 배포 가이드 | 환경 설정, n8n 배포, 트러블슈팅 |
 | [I08](./I08-[Implementation]%20Web%20UI%20구현.md) | Web UI | 웹 프론트엔드 구현 (Next.js + Shadcn/UI) |
+| [I09](./I09-[Implementation]%20Google%20Drive%20연동.md) | Google Drive | Google Drive/Sheets 연동 설계 |
+| [I10](./I10-[Implementation]%20배포%20완료%20보고서.md) | 배포 보고서 | 시스템 배포 완료 보고서 |
 
 ---
 
@@ -82,7 +85,16 @@ node scripts/validate-patent.js patent.md
 
 | 문서 ID | 제목 | 설명 |
 |---------|------|------|
-| [T01](./T01-[Test]%20통합%20테스트%20리포트.md) | 통합 테스트 | 워크플로우 통합 테스트 및 E2E 테스트 리포트 |
+| [T01](./T01-[Test]%20통합%20테스트%20리포트.md) | 통합 테스트 | 워크플로우 통합 테스트 리포트 |
+| [T02](./T02-[Test]%20E2E%20통합%20테스트%20리포트.md) | E2E 테스트 | GitHub Pages + n8n Cloud 전체 E2E 테스트 (2026-01-12) |
+
+---
+
+## 계획 문서 (P##)
+
+| 문서 ID | 제목 | 설명 |
+|---------|------|------|
+| [P01](./P01-[Plan]%20Production%20배포%20계획.md) | Production 배포 계획 | Production 환경 배포 및 운영 계획 (2026-01-12) |
 
 ---
 
@@ -136,26 +148,34 @@ node scripts/validate-patent.js patent.md
 | Phase 2: 워크플로우 구축 | 완료 | 100% |
 | Phase 3: 포맷팅 및 출력 | 완료 | 100% |
 | Phase 4: 테스트 및 품질 관리 | 완료 | 100% |
-| Phase 5: 웹 UI 구현 | 진행 중 | 50% |
+| Phase 5: 웹 UI 구현 | 완료 | 100% |
 
 ### Web UI 진행 상황
 | 단계 | 상태 |
 |------|------|
-| Phase 1: 기반 구축 | 완료 |
-| Phase 2: 핵심 폼 | 완료 |
-| Phase 3: 추적 & 미리보기 | 완료 |
-| Phase 4: 검수 패널 | 대기 |
-| Phase 5: 대시보드 & 내보내기 | 대기 |
-| Phase 6: 마무리 | 대기 |
+| Phase 1: 기반 구축 | ✅ 완료 |
+| Phase 2: 핵심 폼 | ✅ 완료 |
+| Phase 3: 추적 & 미리보기 | ✅ 완료 |
+| Phase 4: 검수 패널 | ✅ 완료 |
+| Phase 5: 대시보드 & 내보내기 | ✅ 완료 |
+| Phase 6: 마무리 | ✅ 완료 |
+
+### E2E 통합 테스트 결과 (2026-01-12)
+| 테스트 | 결과 |
+|--------|------|
+| 단위 테스트 (42개) | ✅ PASS |
+| Webhook 응답 테스트 | ✅ PASS |
+| CORS Preflight 테스트 | ✅ PASS |
+| E2E 폼 제출 플로우 | ✅ PASS |
 
 ### 최근 업데이트
-- **2026-01-11**: Web UI Phase 3 완료 - 실시간 추적 및 명세서 미리보기 (useExecutionStatus, PatentPreview)
-- **2026-01-11**: Web UI Phase 2 완료 - InventionForm 4단계 폼 (React Hook Form + Zod)
-- **2026-01-11**: Web UI Phase 1 완료 - Next.js 14 프로젝트 초기화, Shadcn/UI 설정
+- **2026-01-12**: E2E 통합 테스트 완료 - GitHub Pages + n8n Cloud 연동 검증 (T02 문서화)
+- **2026-01-12**: Webhook executionId 반환 수정 - `$execution.id` → `WF01-timestamp` 형식
+- **2026-01-12**: CORS 설정 완료 - n8n Webhook 노드에서 Cross-Origin 허용
+- **2026-01-11**: Web UI Phase 6 완료 - GitHub Pages 배포 완료
+- **2026-01-11**: Web UI Phase 1-5 완료 - Next.js 14 프론트엔드 전체 구현
 - **2026-01-11**: Phase 4 완료 - 단위 테스트 42개 구현 (100% 통과)
 - **2026-01-11**: Phase 3 완료 - Pandoc 변환 시스템 및 KIPO 표준 검증 구현
-- **2026-01-11**: A05 상세 시스템 설계 문서 작성 (에이전틱 엔진, 보안, 파이프라인)
-- **2026-01-11**: E2E 파이프라인 테스트 완료 (WF02→WF03→WF04)
 - **2026-01-10**: Phase 2 워크플로우 구축 완료
 
 ---
@@ -212,4 +232,4 @@ MAIPatent/
 
 ---
 
-*최종 수정일: 2026-01-11 (Web UI Phase 3 완료)*
+*최종 수정일: 2026-01-12 (E2E 통합 테스트 완료)*
