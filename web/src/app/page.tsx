@@ -10,28 +10,28 @@ const features = [
     title: '발명 제안서 입력',
     description: '단계별 폼으로 발명 아이디어를 체계적으로 입력',
     icon: FileText,
-    href: '/MAIPatent/submit/',
+    href: '/submit/',
     color: 'text-blue-500',
   },
   {
     title: '선행기술 검색',
     description: 'KIPRIS API를 활용한 자동 선행기술 검색',
     icon: Search,
-    href: '/MAIPatent/tracking/',
+    href: '/tracking/',
     color: 'text-green-500',
   },
   {
     title: 'Human-in-the-loop 검수',
     description: '변리사/연구자의 Split View 검수 인터페이스',
     icon: CheckCircle,
-    href: '/MAIPatent/review/',
+    href: '/review/',
     color: 'text-orange-500',
   },
   {
     title: '명세서 내보내기',
     description: 'KIPO 표준 DOCX/PDF 형식으로 내보내기',
     icon: Download,
-    href: '/MAIPatent/export/',
+    href: '/export/',
     color: 'text-purple-500',
   },
 ];
@@ -48,13 +48,13 @@ export default function Home() {
           n8n & Claude Code 기반으로 발명 제안서를 KIPO 규격 특허 명세서로 자동 변환합니다.
         </p>
         <div className="flex gap-4 justify-center pt-4">
-          <Link href="/MAIPatent/submit/">
+          <Link href="/submit/">
             <Button size="lg">
               <FileText className="mr-2 h-5 w-5" />
               발명 제안서 작성
             </Button>
           </Link>
-          <Link href="/MAIPatent/dashboard/">
+          <Link href="/dashboard/">
             <Button variant="outline" size="lg">
               대시보드 보기
             </Button>

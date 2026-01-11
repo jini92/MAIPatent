@@ -15,27 +15,27 @@ import { cn } from '@/lib/utils';
 const navigation = [
   {
     name: '대시보드',
-    href: '/MAIPatent/dashboard/',
+    href: '/dashboard/',
     icon: LayoutDashboard,
   },
   {
     name: '발명 제안서',
-    href: '/MAIPatent/submit/',
+    href: '/submit/',
     icon: FileText,
   },
   {
     name: '진행 추적',
-    href: '/MAIPatent/tracking/',
+    href: '/tracking/',
     icon: Search,
   },
   {
     name: '검수 대기',
-    href: '/MAIPatent/review/',
+    href: '/review/',
     icon: CheckCircle,
   },
   {
     name: '내보내기',
-    href: '/MAIPatent/export/',
+    href: '/export/',
     icon: Download,
   },
 ];
@@ -89,7 +89,7 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
 
         <div className="absolute bottom-4 left-4 right-4">
           <Link
-            href="/MAIPatent/settings/"
+            href="/settings/"
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             <Settings className="h-4 w-4" />

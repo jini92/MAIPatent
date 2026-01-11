@@ -220,7 +220,7 @@ export const PatentTable: React.FC<PatentTableProps> = ({
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <Link href={`/MAIPatent/tracking/?id=${patent.id}`}>
+                      <Link href={`/tracking/?id=${patent.id}`}>
                         <button
                           className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                           title="보기"
@@ -229,7 +229,7 @@ export const PatentTable: React.FC<PatentTableProps> = ({
                         </button>
                       </Link>
                       {patent.status === 'reviewing' && (
-                        <Link href={`/MAIPatent/review/?id=${patent.id}`}>
+                        <Link href={`/review/?id=${patent.id}`}>
                           <button
                             className="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
                             title="검수"
@@ -239,7 +239,7 @@ export const PatentTable: React.FC<PatentTableProps> = ({
                         </Link>
                       )}
                       {patent.status === 'approved' && (
-                        <Link href={`/MAIPatent/export/?id=${patent.id}`}>
+                        <Link href={`/export/?id=${patent.id}`}>
                           <button
                             className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
                             title="내보내기"

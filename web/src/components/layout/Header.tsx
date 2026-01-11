@@ -23,26 +23,26 @@ export function Header({ onMenuClick }: HeaderProps) {
           <span className="sr-only">메뉴 토글</span>
         </Button>
 
-        <Link href="/MAIPatent/" className="mr-6 flex items-center space-x-2">
+        <Link href="/" className="mr-6 flex items-center space-x-2">
           <FileText className="h-6 w-6 text-primary" />
           <span className="hidden font-bold sm:inline-block">MAIPatent</span>
         </Link>
 
         <nav className="flex flex-1 items-center space-x-4 lg:space-x-6">
           <Link
-            href="/MAIPatent/submit/"
+            href="/submit/"
             className="text-sm font-medium transition-colors hover:text-primary"
           >
             발명 제안
           </Link>
           <Link
-            href="/MAIPatent/dashboard/"
+            href="/dashboard/"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
             대시보드
           </Link>
           <Link
-            href="/MAIPatent/tracking/"
+            href="/tracking/"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
             진행 추적

@@ -47,14 +47,14 @@ export default function SubmitPage() {
             <div className="flex gap-4">
               <Button
                 className="flex-1"
-                onClick={() => router.push(`/MAIPatent/tracking/?id=${submittedId}`)}
+                onClick={() => router.push(`/tracking/?id=${submittedId}`)}
               >
                 진행 상황 확인
               </Button>
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => router.push('/MAIPatent/dashboard/')}
+                onClick={() => router.push('/dashboard/')}
               >
                 대시보드로 이동
               </Button>

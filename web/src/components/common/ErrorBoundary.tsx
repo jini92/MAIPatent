@@ -126,7 +126,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   다시 시도
                 </button>
                 <Link
-                  href="/MAIPatent/dashboard/"
+                  href="/dashboard/"
                   className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <Home className="w-4 h-4" />

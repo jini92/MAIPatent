@@ -44,7 +44,7 @@ export default function DashboardPage() {
             )}
             새로고침
           </Button>
-          <Link href="/MAIPatent/submit/">
+          <Link href="/submit/">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
               새 발명 제안서
@@ -155,25 +155,25 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Link href="/MAIPatent/submit/" className="block">
+            <Link href="/submit/" className="block">
               <div className="p-4 border rounded-lg hover:bg-accent/50 transition-colors text-center">
                 <Plus className="h-8 w-8 mx-auto mb-2 text-blue-600" />
                 <p className="text-sm font-medium">새 발명 제안서</p>
               </div>
             </Link>
-            <Link href="/MAIPatent/review/" className="block">
+            <Link href="/review/" className="block">
               <div className="p-4 border rounded-lg hover:bg-accent/50 transition-colors text-center">
                 <FileText className="h-8 w-8 mx-auto mb-2 text-orange-600" />
                 <p className="text-sm font-medium">검수 대기 ({stats.reviewing})</p>
               </div>
             </Link>
-            <Link href="/MAIPatent/tracking/" className="block">
+            <Link href="/tracking/" className="block">
               <div className="p-4 border rounded-lg hover:bg-accent/50 transition-colors text-center">
                 <Clock className="h-8 w-8 mx-auto mb-2 text-yellow-600" />
                 <p className="text-sm font-medium">진행 추적</p>
               </div>
             </Link>
-            <Link href="/MAIPatent/export/" className="block">
+            <Link href="/export/" className="block">
               <div className="p-4 border rounded-lg hover:bg-accent/50 transition-colors text-center">
                 <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-600" />
                 <p className="text-sm font-medium">내보내기</p>
