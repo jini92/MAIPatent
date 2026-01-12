@@ -1,0 +1,238 @@
+{
+  "name": "WF05-Google-OAuth",
+  "id": "oauth-google-flow",
+  "description": "Google OAuth 인증 워크플로우 - MAIPatent 사용자 인증 처리",
+  "active": false,
+  "nodes": [
+    {
+      "id": "oauth-start",
+      "name": "OAuth 시작",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "auth-google",
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "auth/google",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      }
+    },
+    {
+      "id": "build-google-url",
+      "name": "Google OAuth URL 생성",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0],
+      "parameters": {
+        "jsCode": "// Google OAuth URL 생성\nconst query = $input.first().json.query || {};\nconst callbackUrl = query.callback_url || 'https://jini92.github.io/MAIPatent/';\n\n// n8n의 Google OAuth 콜백 URL\nconst n8nCallbackUrl = `${$env.N8N_WEBHOOK_URL}/auth/google/callback`;\n\n// Google OAuth 설정\nconst clientId = $env.GOOGLE_CLIENT_ID;\nconst redirectUri = encodeURIComponent(n8nCallbackUrl);\nconst scope = encodeURIComponent('openid email profile');\nconst state = Buffer.from(JSON.stringify({ callback_url: callbackUrl })).toString('base64');\n\nconst googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=${state}&access_type=offline&prompt=consent`;\n\nreturn [{\n  json: {\n    googleAuthUrl,\n    callbackUrl,\n    state\n  }\n}];"
+      }
+    },
+    {
+      "id": "redirect-google",
+      "name": "Google로 리다이렉트",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [440, 0],
+      "parameters": {
+        "respondWith": "redirect",
+        "redirectURL": "={{ $json.googleAuthUrl }}"
+      }
+    },
+    {
+      "id": "oauth-callback",
+      "name": "OAuth 콜백",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 200],
+      "webhookId": "auth-google-callback",
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "auth/google/callback",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      }
+    },
+    {
+      "id": "extract-code",
+      "name": "인증 코드 추출",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 200],
+      "parameters": {
+        "jsCode": "// URL 파라미터에서 코드와 state 추출\nconst query = $input.first().json.query || {};\nconst code = query.code;\nconst state = query.state;\nconst error = query.error;\n\nif (error) {\n  return [{\n    json: {\n      success: false,\n      error: error,\n      error_description: query.error_description || 'OAuth 인증이 취소되었습니다.'\n    }\n  }];\n}\n\nif (!code) {\n  return [{\n    json: {\n      success: false,\n      error: 'missing_code',\n      error_description: '인증 코드가 없습니다.'\n    }\n  }];\n}\n\n// state에서 callback_url 추출\nlet callbackUrl = 'https://jini92.github.io/MAIPatent/';\ntry {\n  const stateData = JSON.parse(Buffer.from(state, 'base64').toString());\n  callbackUrl = stateData.callback_url || callbackUrl;\n} catch (e) {\n  // state 파싱 실패 시 기본값 사용\n}\n\nreturn [{\n  json: {\n    success: true,\n    code,\n    callbackUrl\n  }\n}];"
+      }
+    },
+    {
+      "id": "check-code",
+      "name": "코드 확인",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [440, 200],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "success-check",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "exchange-token",
+      "name": "토큰 교환",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 100],
+      "parameters": {
+        "method": "POST",
+        "url": "https://oauth2.googleapis.com/token",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"code\": \"{{ $json.code }}\",\n  \"client_id\": \"{{ $env.GOOGLE_CLIENT_ID }}\",\n  \"client_secret\": \"{{ $env.GOOGLE_CLIENT_SECRET }}\",\n  \"redirect_uri\": \"{{ $env.N8N_WEBHOOK_URL }}/auth/google/callback\",\n  \"grant_type\": \"authorization_code\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "responseFormat": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "get-user-info",
+      "name": "사용자 정보 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 100],
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.googleapis.com/oauth2/v2/userinfo",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.access_token }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "build-redirect",
+      "name": "콜백 URL 생성",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 100],
+      "parameters": {
+        "jsCode": "// 사용자 정보와 콜백 URL 준비\nconst userInfo = $input.first().json;\nconst callbackUrl = $('코드 확인').first().json.callbackUrl || 'https://jini92.github.io/MAIPatent/auth/callback/';\n\n// 사용자 정보를 URL 파라미터로 인코딩\nconst params = new URLSearchParams({\n  user_id: userInfo.id || '',\n  user_name: userInfo.name || '',\n  user_email: userInfo.email || '',\n  user_image: userInfo.picture || ''\n});\n\nconst redirectUrl = `${callbackUrl}?${params.toString()}`;\n\nreturn [{\n  json: {\n    redirectUrl,\n    userInfo\n  }\n}];"
+      }
+    },
+    {
+      "id": "redirect-success",
+      "name": "프론트엔드로 리다이렉트",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1320, 100],
+      "parameters": {
+        "respondWith": "redirect",
+        "redirectURL": "={{ $json.redirectUrl }}"
+      }
+    },
+    {
+      "id": "build-error-redirect",
+      "name": "에러 URL 생성",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300],
+      "parameters": {
+        "jsCode": "// 에러 리다이렉트 URL 생성\nconst errorInfo = $input.first().json;\nconst callbackUrl = errorInfo.callbackUrl || 'https://jini92.github.io/MAIPatent/auth/callback/';\n\nconst params = new URLSearchParams({\n  error: errorInfo.error || 'unknown_error',\n  error_description: errorInfo.error_description || '알 수 없는 오류가 발생했습니다.'\n});\n\nconst redirectUrl = `${callbackUrl}?${params.toString()}`;\n\nreturn [{\n  json: {\n    redirectUrl\n  }\n}];"
+      }
+    },
+    {
+      "id": "redirect-error",
+      "name": "에러 리다이렉트",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [880, 300],
+      "parameters": {
+        "respondWith": "redirect",
+        "redirectURL": "={{ $json.redirectUrl }}"
+      }
+    }
+  ],
+  "connections": {
+    "OAuth 시작": {
+      "main": [[{ "node": "Google OAuth URL 생성", "type": "main", "index": 0 }]]
+    },
+    "Google OAuth URL 생성": {
+      "main": [[{ "node": "Google로 리다이렉트", "type": "main", "index": 0 }]]
+    },
+    "OAuth 콜백": {
+      "main": [[{ "node": "인증 코드 추출", "type": "main", "index": 0 }]]
+    },
+    "인증 코드 추출": {
+      "main": [[{ "node": "코드 확인", "type": "main", "index": 0 }]]
+    },
+    "코드 확인": {
+      "main": [
+        [{ "node": "토큰 교환", "type": "main", "index": 0 }],
+        [{ "node": "에러 URL 생성", "type": "main", "index": 0 }]
+      ]
+    },
+    "토큰 교환": {
+      "main": [[{ "node": "사용자 정보 조회", "type": "main", "index": 0 }]]
+    },
+    "사용자 정보 조회": {
+      "main": [[{ "node": "콜백 URL 생성", "type": "main", "index": 0 }]]
+    },
+    "콜백 URL 생성": {
+      "main": [[{ "node": "프론트엔드로 리다이렉트", "type": "main", "index": 0 }]]
+    },
+    "에러 URL 생성": {
+      "main": [[{ "node": "에러 리다이렉트", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "version": "1.0.0",
+    "created": "2026-01-12",
+    "updated": "2026-01-12",
+    "project": "MAIPatent",
+    "workflow_sequence": 5,
+    "description": "Google OAuth 인증 처리",
+    "required_credentials": [
+      "GOOGLE_CLIENT_ID",
+      "GOOGLE_CLIENT_SECRET"
+    ],
+    "endpoints": [
+      "GET /auth/google - OAuth 시작",
+      "GET /auth/google/callback - OAuth 콜백"
+    ]
+  }
+}
