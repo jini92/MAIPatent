@@ -6,7 +6,6 @@ on:
     paths:
       - 'web/**'
       - '.github/workflows/deploy-frontend.yml'
-  workflow_dispatch:
 
 permissions:
   contents: read
