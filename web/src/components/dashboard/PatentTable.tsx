@@ -203,7 +203,7 @@ export const PatentTable: React.FC<PatentTableProps> = ({
                       {patent.title}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {patent.wordCount.toLocaleString()} 자 · 수정 {patent.revisionCount}회
+                      {(patent.wordCount ?? 0).toLocaleString()} 자 · 수정 {patent.revisionCount ?? 0}회
                     </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700">

@@ -1,20 +1,30 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import {
+  getStoredPatents,
+  initializeWithSampleData,
+  StoredPatent,
+} from '@/lib/patent-storage';
 
 // 명세서 상태 타입
 export type PatentStatus = 'draft' | 'generating' | 'reviewing' | 'approved' | 'rejected';
 
-// 명세서 데이터 타입
+// 명세서 데이터 타입 (확장된 필드 포함)
 export interface Patent {
   id: string;
   title: string;
   inventorName: string;
+  affiliation?: string;
+  email?: string;
+  technicalField?: string;
+  keywords?: string[];
   status: PatentStatus;
   createdAt: string;
   updatedAt: string;
-  wordCount: number;
-  revisionCount: number;
+  executionId?: string;
+  wordCount?: number;
+  revisionCount?: number;
 }
 
 // 대시보드 통계 타입
@@ -51,41 +61,22 @@ export interface UseDashboardStatsReturn {
   refreshData: () => Promise<void>;
 }
 
-// Mock 데이터 생성
-const generateMockPatents = (): Patent[] => {
-  const titles = [
-    '인공지능 기반 이미지 분류 시스템',
-    '블록체인 기반 디지털 인증 방법',
-    '자연어 처리를 이용한 문서 요약 장치',
-    '딥러닝 기반 음성 인식 시스템',
-    'IoT 센서 데이터 분석 플랫폼',
-    '클라우드 기반 협업 도구',
-    '자율주행 차량 경로 최적화 알고리즘',
-    '스마트 팩토리 예지 보전 시스템',
-  ];
-
-  const statuses: PatentStatus[] = ['draft', 'generating', 'reviewing', 'approved', 'rejected'];
-  const names = ['김철수', '이영희', '박지민', '최수현', '정민우'];
-
-  return titles.map((title, index) => {
-    const createdDate = new Date();
-    createdDate.setDate(createdDate.getDate() - Math.floor(Math.random() * 30));
-
-    const updatedDate = new Date(createdDate);
-    updatedDate.setDate(updatedDate.getDate() + Math.floor(Math.random() * 5));
-
-    return {
-      id: `PAT-${String(index + 1).padStart(3, '0')}`,
-      title,
-      inventorName: names[Math.floor(Math.random() * names.length)],
-      status: statuses[Math.floor(Math.random() * statuses.length)],
-      createdAt: createdDate.toISOString().split('T')[0],
-      updatedAt: updatedDate.toISOString().split('T')[0],
-      wordCount: 2000 + Math.floor(Math.random() * 3000),
-      revisionCount: Math.floor(Math.random() * 3),
-    };
-  });
-};
+// StoredPatent를 Patent로 변환
+const convertStoredPatentToPatent = (stored: StoredPatent): Patent => ({
+  id: stored.id,
+  title: stored.title,
+  inventorName: stored.inventorName,
+  affiliation: stored.affiliation,
+  email: stored.email,
+  technicalField: stored.technicalField,
+  keywords: stored.keywords,
+  status: stored.status,
+  createdAt: stored.createdAt,
+  updatedAt: stored.updatedAt,
+  executionId: stored.executionId,
+  wordCount: stored.wordCount,
+  revisionCount: stored.revisionCount,
+});
 
 // 통계 계산
 const calculateStats = (patents: Patent[]): DashboardStats => {
@@ -155,16 +146,19 @@ export function useDashboardStats(): UseDashboardStatsReturn {
     sortOrder: 'desc',
   });
 
-  // 데이터 로드
+  // 데이터 로드 (localStorage에서)
   const refreshData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Mock API 호출 시뮬레이션
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const mockData = generateMockPatents();
-      setPatents(mockData);
+      // 샘플 데이터 초기화 (데이터가 없을 경우만)
+      initializeWithSampleData();
+
+      // localStorage에서 특허 데이터 로드
+      const storedPatents = getStoredPatents();
+      const patentData = storedPatents.map(convertStoredPatentToPatent);
+      setPatents(patentData);
     } catch (err) {
       setError(err instanceof Error ? err.message : '데이터 로드 실패');
     } finally {
@@ -175,6 +169,18 @@ export function useDashboardStats(): UseDashboardStatsReturn {
   // 초기 로드
   useEffect(() => {
     refreshData();
+  }, [refreshData]);
+
+  // localStorage 변경 감지 (다른 탭/컴포넌트에서의 변경)
+  useEffect(() => {
+    const handlePatentsUpdated = () => {
+      refreshData();
+    };
+
+    window.addEventListener('patentsUpdated', handlePatentsUpdated);
+    return () => {
+      window.removeEventListener('patentsUpdated', handlePatentsUpdated);
+    };
   }, [refreshData]);
 
   // 통계 계산

@@ -21,6 +21,7 @@ import {
   FORM_STEPS,
 } from '@/types/invention';
 import { submitInvention } from '@/lib/n8n-client';
+import { savePatent, createPatentFromFormData } from '@/lib/patent-storage';
 
 const stepSchemas = [step1Schema, step2Schema, step3Schema, step4Schema];
 
@@ -124,6 +125,21 @@ export function InventionForm({ onSuccess }: InventionFormProps) {
           ? [data.drawingDescriptions]
           : [],
       });
+
+      // localStorage에 특허 데이터 저장
+      const patentData = createPatentFromFormData(
+        {
+          inventionTitle: data.inventionTitle,
+          inventorName: data.inventorName,
+          inventorAffiliation: data.inventorAffiliation,
+          inventorEmail: data.inventorEmail,
+          technicalField: data.technicalField,
+          keywords: data.keywords,
+          inventionSummary: data.inventionSummary,
+        },
+        result.executionId
+      );
+      savePatent(patentData);
 
       if (!completedSteps.includes(4)) {
         setCompletedSteps([...completedSteps, 4]);
