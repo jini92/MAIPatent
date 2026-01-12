@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, FileCheck } from 'lucide-react';
 import ReviewPanel from '@/components/review/ReviewPanel';
 import { useReviewState } from '@/hooks/useReviewState';
+import { updatePatentStatus, getStoredPatents } from '@/lib/patent-storage';
+import { PatentStatus } from '@/hooks/useDashboardStats';
 
 function ReviewContent() {
   const searchParams = useSearchParams();
@@ -27,6 +29,26 @@ function ReviewContent() {
       console.log('Submitting review:', data);
       // 실제 API 호출 시뮬레이션
       await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // URL에서 patent ID 추출 (PAT-XXX 형식)
+      const patentId = reviewId;
+
+      // localStorage의 특허 상태 업데이트
+      if (patentId) {
+        let newStatus: PatentStatus;
+        if (data.status === 'approved') {
+          newStatus = 'approved';
+        } else if (data.status === 'rejected') {
+          newStatus = 'rejected';
+        } else if (data.status === 'revision_needed') {
+          newStatus = 'reviewing'; // 수정 필요 시 검수 대기 상태 유지
+        } else {
+          newStatus = 'reviewing';
+        }
+
+        const updated = updatePatentStatus(patentId, newStatus);
+        console.log('Patent status updated:', patentId, '->', newStatus, updated);
+      }
 
       // 성공 시 대시보드로 이동
       if (data.status === 'approved') {
