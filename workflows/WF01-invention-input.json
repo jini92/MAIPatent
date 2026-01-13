@@ -190,11 +190,115 @@
       }
     },
     {
+      "id": "convert-to-json-file",
+      "name": "JSON 파일 변환",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, -100],
+      "parameters": {
+        "jsCode": "// 발명 제안서를 JSON 파일로 변환\nconst data = $input.first().json;\n\n// Patent ID 생성\nconst patentId = `PAT-${String(Date.now()).slice(-6)}`;\n\nconst proposalData = {\n  patent_id: patentId,\n  submission_id: data.submission_id,\n  invention_title: data.invention_title,\n  technical_field: data.technical_field,\n  problem_to_solve: data.problem_to_solve,\n  solution_description: data.solution_description,\n  advantages: data.advantages,\n  applicant_name: data.applicant_name,\n  inventor_name: data.inventor_name,\n  keywords: data.keywords,\n  suggested_ipc: data.suggested_ipc,\n  submission_date: data.submission_date,\n  status: 'generating'\n};\n\nreturn [{\n  json: proposalData,\n  binary: {\n    data: Buffer.from(JSON.stringify(proposalData, null, 2)).toString('base64')\n  }\n}];"
+      }
+    },
+    {
+      "id": "google-drive-upload",
+      "name": "Google Drive 업로드 (발명제안서)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1320, -100],
+      "parameters": {
+        "operation": "upload",
+        "folderId": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_DRIVE_PROPOSAL_FOLDER_ID }}",
+          "mode": "id"
+        },
+        "name": "=발명제안서_{{ $json.patent_id }}_{{ $now.format('yyyyMMdd') }}.json",
+        "options": {
+          "mimeType": "application/json"
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "google-drive-credentials",
+          "name": "Google Drive OAuth2"
+        }
+      }
+    },
+    {
+      "id": "google-sheets-append",
+      "name": "Google Sheets 저장 (메타데이터)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1540, -100],
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_SHEETS_TRACKING_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "제출이력",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Patent ID": "={{ $json.patent_id }}",
+            "발명 명칭": "={{ $json.invention_title }}",
+            "발명자": "={{ $json.inventor_name }}",
+            "소속": "={{ $json.applicant_name }}",
+            "기술분야": "={{ $json.technical_field }}",
+            "키워드": "={{ $json.keywords.join(', ') }}",
+            "상태": "generating",
+            "제출일": "={{ $now.format('yyyy-MM-dd') }}",
+            "발명제안서 URL": "={{ $('Google Drive 업로드 (발명제안서)').item.json.webViewLink }}"
+          }
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-credentials",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "id": "set-output-with-urls",
+      "name": "URL 포함 출력 설정",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1760, -100],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "drive_url",
+              "name": "drive_url",
+              "value": "={{ $('Google Drive 업로드 (발명제안서)').item.json.webViewLink }}",
+              "type": "string"
+            },
+            {
+              "id": "sheets_row",
+              "name": "sheets_row",
+              "value": "={{ $('Google Sheets 저장 (메타데이터)').item.json.updates.updatedRows }}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true
+      }
+    },
+    {
       "id": "call-wf02",
       "name": "WF02 선행기술검색 호출",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1100, -100],
+      "position": [1980, -100],
       "parameters": {
         "method": "POST",
         "url": "={{ $env.N8N_WEBHOOK_URL }}/wf02-prior-art-search",
@@ -222,6 +326,18 @@
       "main": [[{ "node": "출력 데이터 설정", "type": "main", "index": 0 }]]
     },
     "출력 데이터 설정": {
+      "main": [[{ "node": "JSON 파일 변환", "type": "main", "index": 0 }]]
+    },
+    "JSON 파일 변환": {
+      "main": [[{ "node": "Google Drive 업로드 (발명제안서)", "type": "main", "index": 0 }]]
+    },
+    "Google Drive 업로드 (발명제안서)": {
+      "main": [[{ "node": "Google Sheets 저장 (메타데이터)", "type": "main", "index": 0 }]]
+    },
+    "Google Sheets 저장 (메타데이터)": {
+      "main": [[{ "node": "URL 포함 출력 설정", "type": "main", "index": 0 }]]
+    },
+    "URL 포함 출력 설정": {
       "main": [[{ "node": "WF02 선행기술검색 호출", "type": "main", "index": 0 }]]
     }
   },
@@ -230,9 +346,9 @@
     "callerPolicy": "workflowsFromSameOwner"
   },
   "meta": {
-    "version": "1.1.0",
+    "version": "1.2.0",
     "created": "2026-01-10",
-    "updated": "2026-01-10",
+    "updated": "2026-01-13",
     "project": "MAIPatent",
     "workflow_sequence": 1,
     "next_workflow": "WF02-prior-art-search",

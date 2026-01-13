@@ -78,6 +78,8 @@ node scripts/validate-patent.js patent.md
 | [I08](./I08-[Implementation]%20Web%20UI%20구현.md) | Web UI | 웹 프론트엔드 구현 (Next.js + Shadcn/UI) |
 | [I09](./I09-[Implementation]%20Google%20Drive%20연동.md) | Google Drive | Google Drive/Sheets 연동 설계 |
 | [I10](./I10-[Implementation]%20배포%20완료%20보고서.md) | 배포 보고서 | 시스템 배포 완료 보고서 |
+| [I11](./I11-[Implementation]%20대시보드%20데이터%20연동%20개선.md) | 대시보드 연동 | 대시보드 데이터 연동 개선 |
+| [I12](./I12-[Implementation]%20Google%20Drive%20및%20Sheets%20연동%20가이드.md) | Google 연동 가이드 | Google Drive/Sheets 연동 구현 가이드 (완료) |
 
 ---
 
@@ -87,6 +89,11 @@ node scripts/validate-patent.js patent.md
 |---------|------|------|
 | [T01](./T01-[Test]%20통합%20테스트%20리포트.md) | 통합 테스트 | 워크플로우 통합 테스트 리포트 |
 | [T02](./T02-[Test]%20E2E%20통합%20테스트%20리포트.md) | E2E 테스트 | GitHub Pages + n8n Cloud 전체 E2E 테스트 (2026-01-12) |
+| [T03](./T03-[Test]%20E2E%20시나리오%20테스트%20리포트.md) | E2E 시나리오 | 발명제안서→승인 플로우 테스트 |
+| [T04](./T04-[Test]%20E2E%20시나리오%20테스트%20리포트%20(내보내기%20포함).md) | E2E 내보내기 | 내보내기 포함 전체 플로우 테스트 |
+| [T05](./T05-[Test]%20E2E%20대시보드%20데이터%20연동%20테스트%20리포트.md) | 대시보드 연동 | 대시보드 데이터 연동 테스트 |
+| [T06](./T06-[Test]%20E2E%20검수%20승인%20상태%20업데이트%20버그%20수정%20테스트%20리포트.md) | 버그 수정 | 검수 승인 상태 업데이트 버그 수정 |
+| [T07](./T07-[Test]%20Google%20Drive%20Sheets%20연동%20E2E%20테스트%20리포트.md) | Google 연동 | Google Drive/Sheets 연동 E2E 테스트 (2026-01-13) |
 
 ---
 
@@ -131,12 +138,13 @@ node scripts/validate-patent.js patent.md
 
 ## n8n 워크플로우 ID
 
-| 워크플로우 | n8n ID | Webhook 경로 |
-|------------|--------|--------------|
-| WF01-발명제안서입력 | `galbpC91RCA90yyi` | - (Form Trigger) |
-| WF02-선행기술검색 | `iFAXSkfG5Rh0b8Qh` | `/wf02-prior-art-search` |
-| WF03-명세서생성 | `7kZOpw4nYXj5aWIG` | `/wf03-generate-patent-spec` |
-| WF04-명세서검수 | `zSXpWko9op4hnSBr` | `/wf04-review-request` |
+| 워크플로우 | n8n ID | Webhook 경로 | Google 연동 |
+|------------|--------|--------------|-------------|
+| WF01-발명제안서입력 | `galbpC91RCA90yyi` | - (Form Trigger) | Drive + Sheets |
+| WF02-선행기술검색 | `iFAXSkfG5Rh0b8Qh` | `/wf02-prior-art-search` | - |
+| WF03-명세서생성 | `7kZOpw4nYXj5aWIG` | `/wf03-generate-patent-spec` | Drive + Sheets |
+| WF04-명세서검수 | `zSXpWko9op4hnSBr` | `/wf04-review-request` | Drive + Sheets |
+| WF05-Google-OAuth | `rt2CpYYYZi55dEIw` | `/auth/google/*` | OAuth 인증 |
 
 ---
 
@@ -160,22 +168,34 @@ node scripts/validate-patent.js patent.md
 | Phase 5: 대시보드 & 내보내기 | ✅ 완료 |
 | Phase 6: 마무리 | ✅ 완료 |
 
-### E2E 통합 테스트 결과 (2026-01-12)
+### E2E 테스트 결과 (2026-01-13)
 | 테스트 | 결과 |
 |--------|------|
-| 단위 테스트 (42개) | ✅ PASS |
-| Webhook 응답 테스트 | ✅ PASS |
-| CORS Preflight 테스트 | ✅ PASS |
-| E2E 폼 제출 플로우 | ✅ PASS |
+| 단위 테스트 (42개) | PASS |
+| Webhook 응답 테스트 | PASS |
+| CORS Preflight 테스트 | PASS |
+| E2E 폼 제출 플로우 | PASS |
+| Google Drive 연동 | PASS |
+| Google Sheets 연동 | PASS |
+| OAuth Credentials 검증 | PASS |
+
+### Google 연동 현황 (2026-01-13)
+| 구성요소 | 상태 |
+|----------|------|
+| OAuth Credentials | 설정 완료 |
+| 환경변수 (7개) | 설정 완료 |
+| Google Drive 폴더 | 5개 연결 완료 |
+| Google Sheets 시트 | 제출이력 시트 생성 완료 |
 
 ### 최근 업데이트
+- **2026-01-13**: Google Drive/Sheets 연동 완료 - WF01, WF03, WF04 연동 검증 (T07, I12 문서화)
+- **2026-01-13**: n8n 환경변수 설정 완료 - 7개 환경변수 구성
+- **2026-01-13**: OAuth Credentials 설정 완료 - Drive + Sheets 연결
+- **2026-01-12**: 검수 승인 버그 수정 - useRef로 상태 추적 문제 해결 (T06 문서화)
 - **2026-01-12**: E2E 통합 테스트 완료 - GitHub Pages + n8n Cloud 연동 검증 (T02 문서화)
-- **2026-01-12**: Webhook executionId 반환 수정 - `$execution.id` → `WF01-timestamp` 형식
 - **2026-01-12**: CORS 설정 완료 - n8n Webhook 노드에서 Cross-Origin 허용
 - **2026-01-11**: Web UI Phase 6 완료 - GitHub Pages 배포 완료
-- **2026-01-11**: Web UI Phase 1-5 완료 - Next.js 14 프론트엔드 전체 구현
 - **2026-01-11**: Phase 4 완료 - 단위 테스트 42개 구현 (100% 통과)
-- **2026-01-11**: Phase 3 완료 - Pandoc 변환 시스템 및 KIPO 표준 검증 구현
 - **2026-01-10**: Phase 2 워크플로우 구축 완료
 
 ---
@@ -226,10 +246,23 @@ MAIPatent/
 
 ### 선택 요구사항
 - KIPRIS API Key (선행기술 검색, 미설정 시 Mock 데이터)
-- Google Drive (문서 저장, 미구현)
+- Google Drive OAuth (문서 저장, 구현 완료)
+- Google Sheets OAuth (메타데이터 관리, 구현 완료)
 
-자세한 내용은 [I07 배포 가이드](./I07-[Guide]%20배포%20가이드.md) 참조
+### Google 연동 폴더 구조
+```
+G:\My Drive\MAIPatent\
+├── 01_발명제안서/   → 1rqwMUSM_WqSgmztlvh7s8bcO_kSLdd8p
+├── 02_선행기술/     → 1CO63_auDraZymK7sBNfmN8jLZzauyyE7
+├── 03_명세서초안/   → 1NKFG51NeEE8kZALT8uZHg6kzvOcQtmdX
+├── 04_승인문서/     → 19ZuGsXQSQ98ZbnqXcP2-jhTxk8KJ_I0a
+└── 05_반려문서/     → 1uqY6hkyzlM7nn8e6Rzy0ygr62NGQ0Ovg
+
+Google Sheets ID: 1nPBr1E4-zQNFiIAt7Q36tDP5x0niDSFqJsNllaIwWvI
+```
+
+자세한 내용은 [I07 배포 가이드](./I07-[Guide]%20배포%20가이드.md) 및 [I12 Google 연동 가이드](./I12-[Implementation]%20Google%20Drive%20및%20Sheets%20연동%20가이드.md) 참조
 
 ---
 
-*최종 수정일: 2026-01-12 (E2E 통합 테스트 완료)*
+*최종 수정일: 2026-01-13 (Google Drive/Sheets 연동 완료)*

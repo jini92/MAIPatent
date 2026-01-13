@@ -80,11 +80,111 @@
       "position": [1980, 0]
     },
     {
+      "id": "convert-to-markdown",
+      "name": "명세서 Markdown 변환",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2200, 0],
+      "parameters": {
+        "jsCode": "// 명세서를 Markdown 파일로 변환\nconst data = $input.first().json;\n\n// KIPO 포맷 명세서 조립\nconst specContent = `# ${data.invention_title || '특허 명세서'}\\n\\n` +\n  `**Patent ID**: ${data.patent_id}\\n\\n` +\n  `---\\n\\n` +\n  `## 【특허청구범위】\\n\\n${data.claims || ''}\\n\\n` +\n  `## 【발명의 상세한 설명】\\n\\n${data.detailed_description || ''}\\n\\n` +\n  `## 【도면의 간단한 설명】\\n\\n${data.drawing_description || ''}\\n\\n` +\n  `---\\n\\n` +\n  `*생성일: ${new Date().toISOString()}*`;\n\nreturn [{\n  json: {\n    ...data,\n    spec_content: specContent,\n    status: 'reviewing'\n  },\n  binary: {\n    data: Buffer.from(specContent, 'utf-8').toString('base64')\n  }\n}];"
+      }
+    },
+    {
+      "id": "google-drive-upload-spec",
+      "name": "Google Drive 업로드 (명세서초안)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [2420, 0],
+      "parameters": {
+        "operation": "upload",
+        "folderId": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_DRIVE_DRAFT_FOLDER_ID }}",
+          "mode": "id"
+        },
+        "name": "=명세서초안_{{ $json.patent_id }}_{{ $now.format('yyyyMMdd') }}.md",
+        "options": {
+          "mimeType": "text/markdown"
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "google-drive-credentials",
+          "name": "Google Drive OAuth2"
+        }
+      }
+    },
+    {
+      "id": "google-sheets-update-status",
+      "name": "Google Sheets 상태 업데이트",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [2640, 0],
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_SHEETS_TRACKING_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "제출이력",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Patent ID": "={{ $json.patent_id }}",
+            "상태": "reviewing",
+            "명세서초안 URL": "={{ $('Google Drive 업로드 (명세서초안)').item.json.webViewLink }}"
+          }
+        },
+        "options": {
+          "updateLookupColumn": "Patent ID"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-credentials",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "id": "set-output-with-spec-url",
+      "name": "명세서 URL 포함 출력",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2860, 0],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "spec_drive_url",
+              "name": "spec_drive_url",
+              "value": "={{ $('Google Drive 업로드 (명세서초안)').item.json.webViewLink }}",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "status",
+              "value": "reviewing",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true
+      }
+    },
+    {
       "id": "call-wf04",
       "name": "WF04 검수요청 호출",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2200, 0],
+      "position": [3080, 0],
       "parameters": {
         "method": "POST",
         "url": "={{ $env.N8N_WEBHOOK_URL }}/wf04-review-request",
@@ -124,6 +224,18 @@
       "main": [[{"node": "출력 데이터 설정", "type": "main", "index": 0}]]
     },
     "출력 데이터 설정": {
+      "main": [[{"node": "명세서 Markdown 변환", "type": "main", "index": 0}]]
+    },
+    "명세서 Markdown 변환": {
+      "main": [[{"node": "Google Drive 업로드 (명세서초안)", "type": "main", "index": 0}]]
+    },
+    "Google Drive 업로드 (명세서초안)": {
+      "main": [[{"node": "Google Sheets 상태 업데이트", "type": "main", "index": 0}]]
+    },
+    "Google Sheets 상태 업데이트": {
+      "main": [[{"node": "명세서 URL 포함 출력", "type": "main", "index": 0}]]
+    },
+    "명세서 URL 포함 출력": {
       "main": [[{"node": "WF04 검수요청 호출", "type": "main", "index": 0}]]
     }
   },
@@ -131,9 +243,9 @@
     "executionOrder": "v1"
   },
   "meta": {
-    "version": "1.1.0",
+    "version": "1.2.0",
     "created": "2026-01-10",
-    "updated": "2026-01-10",
+    "updated": "2026-01-13",
     "project": "MAIPatent",
     "workflow_sequence": 3,
     "next_workflow": "WF04-human-review",
