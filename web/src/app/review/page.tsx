@@ -1,17 +1,20 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, FileCheck } from 'lucide-react';
 import ReviewPanel from '@/components/review/ReviewPanel';
-import { useReviewState } from '@/hooks/useReviewState';
-import { updatePatentStatus, getStoredPatents } from '@/lib/patent-storage';
+import { useReviewState, ReviewStatus } from '@/hooks/useReviewState';
+import { updatePatentStatus } from '@/lib/patent-storage';
 import { PatentStatus } from '@/hooks/useDashboardStats';
 
 function ReviewContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const reviewId = searchParams.get('id');
+
+  // React 상태 업데이트가 비동기이므로 ref로 현재 선택된 상태를 추적
+  const pendingStatusRef = useRef<ReviewStatus>('pending');
 
   const {
     reviewData,
@@ -24,9 +27,15 @@ function ReviewContent() {
   } = useReviewState({
     onStatusChange: (status) => {
       console.log('Status changed to:', status);
+      // ref에 현재 상태 저장 (submitReview에서 사용)
+      pendingStatusRef.current = status;
     },
     onSubmit: async (data) => {
-      console.log('Submitting review:', data);
+      // data.status는 비동기 상태 업데이트로 인해 stale할 수 있음
+      // pendingStatusRef.current를 사용하여 실제 선택된 상태를 확인
+      const actualStatus = pendingStatusRef.current;
+      console.log('Submitting review:', { ...data, actualStatus });
+
       // 실제 API 호출 시뮬레이션
       await new Promise(resolve => setTimeout(resolve, 1500));
 
@@ -36,11 +45,11 @@ function ReviewContent() {
       // localStorage의 특허 상태 업데이트
       if (patentId) {
         let newStatus: PatentStatus;
-        if (data.status === 'approved') {
+        if (actualStatus === 'approved') {
           newStatus = 'approved';
-        } else if (data.status === 'rejected') {
+        } else if (actualStatus === 'rejected') {
           newStatus = 'rejected';
-        } else if (data.status === 'revision_needed') {
+        } else if (actualStatus === 'revision_needed') {
           newStatus = 'reviewing'; // 수정 필요 시 검수 대기 상태 유지
         } else {
           newStatus = 'reviewing';
@@ -51,12 +60,12 @@ function ReviewContent() {
       }
 
       // 성공 시 대시보드로 이동
-      if (data.status === 'approved') {
+      if (actualStatus === 'approved') {
         alert('명세서가 승인되었습니다.');
         router.push('/dashboard');
-      } else if (data.status === 'revision_needed') {
+      } else if (actualStatus === 'revision_needed') {
         alert('수정 요청이 전송되었습니다.');
-      } else if (data.status === 'rejected') {
+      } else if (actualStatus === 'rejected') {
         alert('명세서가 반려되었습니다.');
         router.push('/dashboard');
       }
