@@ -395,21 +395,31 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => onStatusChange('rejected')}
-            className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+            onClick={() => {
+              onStatusChange('rejected');
+              // 상태 변경 후 약간의 지연을 두고 제출 (React 상태 업데이트 대기)
+              setTimeout(() => onSubmit(), 50);
+            }}
+            disabled={isSubmitting}
+            className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
           >
             반려
           </button>
           <button
-            onClick={() => onStatusChange('revision_needed')}
-            className="px-4 py-2 text-sm font-medium text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors"
+            onClick={() => {
+              onStatusChange('revision_needed');
+              setTimeout(() => onSubmit(), 50);
+            }}
+            disabled={isSubmitting}
+            className="px-4 py-2 text-sm font-medium text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors disabled:opacity-50"
           >
             수정 요청
           </button>
           <button
             onClick={() => {
               onStatusChange('approved');
-              onSubmit();
+              // 상태 변경 후 약간의 지연을 두고 제출 (React 상태 업데이트 대기)
+              setTimeout(() => onSubmit(), 50);
             }}
             disabled={isSubmitting}
             className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
