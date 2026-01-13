@@ -1,7 +1,7 @@
 # S01-[Summary] MAIPatent 프로젝트 현황 요약
 
 > 작성일: 2026-01-13
-> 버전: 1.0.0
+> 버전: 1.2.0
 > 상태: **운영 중 (Production)**
 
 ---
@@ -71,7 +71,7 @@
 | ID | 워크플로우 | 노드 수 | Google 연동 | 상태 |
 |----|-----------|---------|-------------|------|
 | galbpC91RCA90yyi | WF01-발명제안서입력 | 11 | Drive + Sheets | ACTIVE |
-| iFAXSkfG5Rh0b8Qh | WF02-선행기술검색 | 11 | - | ACTIVE |
+| iFAXSkfG5Rh0b8Qh | WF02-선행기술검색 | 17 | Drive + Sheets | ACTIVE |
 | 7kZOpw4nYXj5aWIG | WF03-명세서생성 | 15 | Drive + Sheets | ACTIVE |
 | zSXpWko9op4hnSBr | WF04-명세서검수 | 15 | Drive + Sheets | ACTIVE |
 | rt2CpYYYZi55dEIw | WF05-Google-OAuth | 12 | OAuth 인증 | ACTIVE |
@@ -172,7 +172,7 @@ G:\My Drive\MAIPatent\
 | 기능 | 완성도 | 비고 |
 |------|--------|------|
 | 발명제안서 입력 | 100% | 웹 폼 + 검증 |
-| 선행기술 검색 | 80% | Mock 데이터 (KIPRIS API 미연동) |
+| 선행기술 검색 | 90% | Mock 데이터 + Google Drive 저장 (KIPRIS API 준비됨) |
 | 명세서 생성 | 100% | Claude AI Extended Thinking |
 | 검수 프로세스 | 100% | 승인/반려/수정요청 |
 | 문서 내보내기 | 80% | Markdown 지원 (DOCX/PDF 미구현) |
@@ -186,7 +186,7 @@ G:\My Drive\MAIPatent\
 
 | 항목 | 우선순위 | 상태 |
 |------|---------|------|
-| KIPRIS API 실제 연동 | MEDIUM | 미구현 |
+| KIPRIS API 실제 연동 | MEDIUM | 준비됨 (API 키 필요) |
 | DOCX/PDF 변환 | LOW | Mock 구현 |
 | WF06 데이터 조회 워크플로우 | MEDIUM | 미구현 |
 | 프론트엔드 Sheets API 직접 연동 | LOW | 미구현 |
@@ -216,6 +216,6 @@ G:\My Drive\MAIPatent\
 ---
 
 *작성일: 2026-01-13*
-*최종 업데이트: 2026-01-13 (Google Drive 5개 폴더 저장 플로우 검증 완료)*
+*최종 업데이트: 2026-01-13 (WF02 Google Drive 선행기술 저장 노드 추가, KIPRIS API 연동 준비)*
 *작성자: Claude Code*
-*버전: 1.1.0*
+*버전: 1.2.0*

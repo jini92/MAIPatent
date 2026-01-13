@@ -21,70 +21,237 @@
       "name": "검색 쿼리 준비",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [220, 0]
+      "position": [220, 0],
+      "parameters": {
+        "jsCode": "// 선행기술 검색을 위한 쿼리 준비\nconst data = $input.first().json;\n\n// 검색 키워드 추출\nconst keywords = data.keywords || [];\nconst title = data.invention_title || '';\nconst technicalField = data.technical_field || '';\n\n// KIPRIS 검색 쿼리 생성\nconst searchQuery = {\n  patent_id: data.patent_id,\n  invention_title: title,\n  keywords: keywords.slice(0, 5),\n  ipc_codes: data.suggested_ipc || [],\n  search_terms: `${title} ${keywords.join(' ')}`.trim(),\n  technical_field: technicalField,\n  original_data: data\n};\n\nreturn [{ json: searchQuery }];"
+      }
     },
     {
       "id": "check-api-key",
       "name": "API 키 확인",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [440, 0]
+      "position": [440, 0],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "api-key-check",
+              "leftValue": "={{ $env.KIPRIS_API_KEY }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
     },
     {
       "id": "kipris-api",
       "name": "KIPRIS API 호출",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [660, -100]
+      "position": [660, -100],
+      "parameters": {
+        "method": "GET",
+        "url": "http://plus.kipris.or.kr/kipo-api/kipi/patUtiModInfoSearchSevice/getWordSearch",
+        "qs": {
+          "word": "={{ $json.search_terms }}",
+          "patent": "true",
+          "utility": "true",
+          "numOfRows": "10",
+          "pageNo": "1",
+          "ServiceKey": "={{ $env.KIPRIS_API_KEY }}"
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      }
     },
     {
       "id": "mock-data",
       "name": "Mock 선행기술 데이터",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [660, 100]
+      "position": [660, 100],
+      "parameters": {
+        "jsCode": "// KIPRIS API 키가 없을 경우 Mock 데이터 반환\nconst data = $input.first().json;\n\nconst mockPriorArts = [\n  {\n    applicationNumber: '10-2023-0001234',\n    inventionTitle: `${data.invention_title || '관련 기술'} 관련 선행기술 1`,\n    applicantName: '삼성전자 주식회사',\n    ipcCode: data.ipc_codes?.[0] || 'G06F',\n    applicationDate: '2023-01-15',\n    relevanceScore: 0.85,\n    abstract: '본 발명은 관련 기술 분야의 선행기술로서, 유사한 기술적 특징을 가지고 있습니다.'\n  },\n  {\n    applicationNumber: '10-2022-0005678',\n    inventionTitle: `${data.invention_title || '관련 기술'} 관련 선행기술 2`,\n    applicantName: 'LG전자 주식회사',\n    ipcCode: data.ipc_codes?.[0] || 'G06F',\n    applicationDate: '2022-06-20',\n    relevanceScore: 0.72,\n    abstract: '본 발명은 유사한 과제를 해결하기 위한 다른 접근 방식을 제시합니다.'\n  },\n  {\n    applicationNumber: '10-2021-0009012',\n    inventionTitle: `${data.invention_title || '관련 기술'} 관련 선행기술 3`,\n    applicantName: '한국전자통신연구원',\n    ipcCode: data.ipc_codes?.[1] || 'G06N',\n    applicationDate: '2021-12-05',\n    relevanceScore: 0.65,\n    abstract: '본 발명은 기초 기술로서 본 발명의 배경이 되는 기술을 제공합니다.'\n  }\n];\n\nreturn [{\n  json: {\n    ...data,\n    prior_arts: mockPriorArts,\n    search_status: 'mock',\n    search_date: new Date().toISOString()\n  }\n}];"
+      }
     },
     {
       "id": "parse-xml",
       "name": "XML 파싱",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [880, -100]
+      "position": [880, -100],
+      "parameters": {
+        "jsCode": "// KIPRIS API XML 응답 파싱\nconst data = $input.first().json;\nconst originalData = data.original_data || data;\n\n// XML 파싱 로직 (실제 KIPRIS API 응답 구조에 맞게 조정 필요)\nlet priorArts = [];\n\ntry {\n  const response = data.body || data;\n  // KIPRIS API 응답 구조에 따른 파싱\n  if (response && response.response && response.response.body) {\n    const items = response.response.body.items?.item || [];\n    priorArts = (Array.isArray(items) ? items : [items]).map((item, idx) => ({\n      applicationNumber: item.applicationNumber || '',\n      inventionTitle: item.inventionTitle || '',\n      applicantName: item.applicantName || '',\n      ipcCode: item.ipcNumber || '',\n      applicationDate: item.applicationDate || '',\n      relevanceScore: 0.8 - (idx * 0.1),\n      abstract: item.astrtCont || ''\n    }));\n  }\n} catch (e) {\n  // 파싱 실패 시 빈 배열\n  priorArts = [];\n}\n\nreturn [{\n  json: {\n    ...originalData,\n    prior_arts: priorArts,\n    search_status: 'kipris',\n    search_date: new Date().toISOString()\n  }\n}];"
+      }
     },
     {
       "id": "merge-results",
       "name": "결과 병합",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
-      "position": [1100, 0]
+      "position": [1100, 0],
+      "parameters": {
+        "mode": "combine",
+        "options": {}
+      }
     },
     {
       "id": "calc-relevance",
       "name": "관련도 점수 계산",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1320, 0]
+      "position": [1320, 0],
+      "parameters": {
+        "jsCode": "// 선행기술 관련도 점수 계산 및 정렬\nconst data = $input.first().json;\nconst priorArts = data.prior_arts || [];\nconst keywords = data.keywords || [];\n\n// 키워드 매칭 기반 관련도 재계산\nconst scoredArts = priorArts.map(art => {\n  let score = art.relevanceScore || 0.5;\n  \n  // 키워드 매칭 보너스\n  const artText = `${art.inventionTitle} ${art.abstract}`.toLowerCase();\n  keywords.forEach(keyword => {\n    if (artText.includes(keyword.toLowerCase())) {\n      score += 0.05;\n    }\n  });\n  \n  return {\n    ...art,\n    relevanceScore: Math.min(score, 1.0)\n  };\n});\n\n// 관련도 순으로 정렬\nconst sortedArts = scoredArts.sort((a, b) => b.relevanceScore - a.relevanceScore);\n\nreturn [{\n  json: {\n    ...data,\n    prior_arts: sortedArts,\n    prior_arts_count: sortedArts.length\n  }\n}];"
+      }
     },
     {
       "id": "build-context",
       "name": "컨텍스트 생성",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1540, 0]
+      "position": [1540, 0],
+      "parameters": {
+        "jsCode": "// 명세서 생성을 위한 선행기술 컨텍스트 구성\nconst data = $input.first().json;\nconst priorArts = data.prior_arts || [];\n\n// 선행기술 요약 텍스트 생성\nconst priorArtSummary = priorArts.slice(0, 5).map((art, idx) => \n  `[선행기술 ${idx + 1}] ${art.inventionTitle}\\n` +\n  `  - 출원번호: ${art.applicationNumber}\\n` +\n  `  - 출원인: ${art.applicantName}\\n` +\n  `  - IPC: ${art.ipcCode}\\n` +\n  `  - 관련도: ${(art.relevanceScore * 100).toFixed(0)}%\\n` +\n  `  - 요약: ${art.abstract}`\n).join('\\n\\n');\n\n// 차별화 포인트 분석\nconst differentiationPoints = [\n  '본 발명만의 고유한 기술적 특징',\n  '선행기술 대비 개선된 효과',\n  '새로운 구성요소 또는 조합'\n];\n\nconst context = {\n  patent_id: data.patent_id,\n  invention_title: data.invention_title || data.original_data?.invention_title,\n  technical_field: data.technical_field || data.original_data?.technical_field,\n  problem_to_solve: data.original_data?.problem_to_solve,\n  solution_description: data.original_data?.solution_description,\n  advantages: data.original_data?.advantages,\n  keywords: data.keywords,\n  suggested_ipc: data.ipc_codes || data.suggested_ipc,\n  prior_arts: priorArts,\n  prior_art_summary: priorArtSummary,\n  prior_arts_count: priorArts.length,\n  differentiation_points: differentiationPoints,\n  search_status: data.search_status,\n  search_date: data.search_date\n};\n\nreturn [{ json: context }];"
+      }
     },
     {
       "id": "set-output",
       "name": "출력 데이터 설정",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [1760, 0]
+      "position": [1760, 0],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "status",
+              "name": "status",
+              "value": "prior_art_complete",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true
+      }
+    },
+    {
+      "id": "convert-to-json-file",
+      "name": "선행기술 JSON 변환",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, 0],
+      "parameters": {
+        "jsCode": "// 선행기술 검색 결과를 JSON 파일로 변환\nconst data = $input.first().json;\n\nconst priorArtReport = {\n  patent_id: data.patent_id,\n  invention_title: data.invention_title,\n  search_date: data.search_date || new Date().toISOString(),\n  search_status: data.search_status,\n  prior_arts_count: data.prior_arts_count,\n  prior_arts: data.prior_arts,\n  prior_art_summary: data.prior_art_summary,\n  differentiation_points: data.differentiation_points\n};\n\nreturn [{\n  json: data,\n  binary: {\n    data: Buffer.from(JSON.stringify(priorArtReport, null, 2)).toString('base64')\n  }\n}];"
+      }
+    },
+    {
+      "id": "google-drive-upload-prior-art",
+      "name": "Google Drive 업로드 (선행기술)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [2200, 0],
+      "parameters": {
+        "operation": "upload",
+        "folderId": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_DRIVE_PRIOR_ART_FOLDER_ID }}",
+          "mode": "id"
+        },
+        "name": "=선행기술_{{ $json.patent_id }}_{{ $now.format('yyyyMMdd') }}.json",
+        "options": {
+          "mimeType": "application/json"
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "google-drive-credentials",
+          "name": "Google Drive OAuth2"
+        }
+      }
+    },
+    {
+      "id": "google-sheets-update-prior-art",
+      "name": "Google Sheets 선행기술 URL 업데이트",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [2420, 0],
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_SHEETS_TRACKING_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "제출이력",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Patent ID": "={{ $json.patent_id }}",
+            "선행기술 URL": "={{ $('Google Drive 업로드 (선행기술)').item.json.webViewLink }}"
+          }
+        },
+        "options": {
+          "updateLookupColumn": "Patent ID"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-credentials",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "id": "set-output-with-urls",
+      "name": "URL 포함 출력 설정",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2640, 0],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "prior_art_drive_url",
+              "name": "prior_art_drive_url",
+              "value": "={{ $('Google Drive 업로드 (선행기술)').item.json.webViewLink }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true
+      }
     },
     {
       "id": "call-wf03",
       "name": "WF03 명세서생성 호출",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1980, 0],
+      "position": [2860, 0],
       "parameters": {
         "method": "POST",
         "url": "={{ $env.N8N_WEBHOOK_URL }}/wf03-generate-patent-spec",
@@ -127,6 +294,18 @@
       "main": [[{ "node": "출력 데이터 설정", "type": "main", "index": 0 }]]
     },
     "출력 데이터 설정": {
+      "main": [[{ "node": "선행기술 JSON 변환", "type": "main", "index": 0 }]]
+    },
+    "선행기술 JSON 변환": {
+      "main": [[{ "node": "Google Drive 업로드 (선행기술)", "type": "main", "index": 0 }]]
+    },
+    "Google Drive 업로드 (선행기술)": {
+      "main": [[{ "node": "Google Sheets 선행기술 URL 업데이트", "type": "main", "index": 0 }]]
+    },
+    "Google Sheets 선행기술 URL 업데이트": {
+      "main": [[{ "node": "URL 포함 출력 설정", "type": "main", "index": 0 }]]
+    },
+    "URL 포함 출력 설정": {
       "main": [[{ "node": "WF03 명세서생성 호출", "type": "main", "index": 0 }]]
     }
   },
@@ -134,12 +313,14 @@
     "executionOrder": "v1"
   },
   "meta": {
-    "version": "1.1.0",
+    "version": "1.2.0",
     "created": "2026-01-10",
-    "updated": "2026-01-10",
+    "updated": "2026-01-13",
     "project": "MAIPatent",
     "workflow_sequence": 2,
     "next_workflow": "WF03-patent-generation",
-    "trigger_connection": "HTTP Request to WF03 Webhook"
+    "trigger_connection": "HTTP Request to WF03 Webhook",
+    "kipris_api_status": "mock_fallback",
+    "google_drive_folder": "02_선행기술"
   }
 }
