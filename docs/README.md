@@ -49,6 +49,7 @@ node scripts/validate-patent.js patent.md
 | `P##` | Plan | 계획 문서 |
 | `D##` | DevLog | 개발 로그 |
 | `R##` | Reference | 참조 문서 |
+| `S##` | Summary | 요약 문서 |
 
 ---
 
@@ -80,6 +81,7 @@ node scripts/validate-patent.js patent.md
 | [I10](./I10-[Implementation]%20배포%20완료%20보고서.md) | 배포 보고서 | 시스템 배포 완료 보고서 |
 | [I11](./I11-[Implementation]%20대시보드%20데이터%20연동%20개선.md) | 대시보드 연동 | 대시보드 데이터 연동 개선 |
 | [I12](./I12-[Implementation]%20Google%20Drive%20및%20Sheets%20연동%20가이드.md) | Google 연동 가이드 | Google Drive/Sheets 연동 구현 가이드 (완료) |
+| [I13](./I13-[Implementation]%20Google%20OAuth%20설정.md) | Google OAuth | Google OAuth 클라이언트 설정 가이드 |
 
 ---
 
@@ -102,6 +104,14 @@ node scripts/validate-patent.js patent.md
 | 문서 ID | 제목 | 설명 |
 |---------|------|------|
 | [P01](./P01-[Plan]%20Production%20배포%20계획.md) | Production 배포 계획 | Production 환경 배포 및 운영 계획 (2026-01-12) |
+
+---
+
+## 요약 문서 (S##)
+
+| 문서 ID | 제목 | 설명 |
+|---------|------|------|
+| [S01](./S01-[Summary]%20프로젝트%20현황%20요약.md) | 프로젝트 현황 | 전체 시스템 현황 및 배포 상태 요약 (2026-01-13) |
 
 ---
 
