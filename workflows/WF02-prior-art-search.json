@@ -107,8 +107,7 @@
       "typeVersion": 3,
       "position": [1100, 0],
       "parameters": {
-        "mode": "combine",
-        "options": {}
+        "mode": "passThrough"
       }
     },
     {
@@ -173,7 +172,7 @@
         "operation": "upload",
         "folderId": {
           "__rl": true,
-          "value": "={{ $env.GOOGLE_DRIVE_PRIOR_ART_FOLDER_ID }}",
+          "value": "={{ $vars.GOOGLE_DRIVE_PRIOR_ART_FOLDER_ID }}",
           "mode": "id"
         },
         "name": "=선행기술_{{ $json.patent_id }}_{{ $now.format('yyyyMMdd') }}.json",
@@ -198,7 +197,7 @@
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "value": "={{ $env.GOOGLE_SHEETS_TRACKING_ID }}",
+          "value": "={{ $vars.GOOGLE_SHEETS_TRACKING_ID }}",
           "mode": "id"
         },
         "sheetName": {
@@ -254,7 +253,7 @@
       "position": [2860, 0],
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.N8N_WEBHOOK_URL }}/wf03-generate-patent-spec",
+        "url": "={{ $vars.N8N_WEBHOOK_URL }}/wf03-generate-patent-spec",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json) }}",
@@ -279,12 +278,9 @@
       "main": [[{ "node": "XML 파싱", "type": "main", "index": 0 }]]
     },
     "XML 파싱": {
-      "main": [[{ "node": "결과 병합", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "관련도 점수 계산", "type": "main", "index": 0 }]]
     },
     "Mock 선행기술 데이터": {
-      "main": [[{ "node": "결과 병합", "type": "main", "index": 1 }]]
-    },
-    "결과 병합": {
       "main": [[{ "node": "관련도 점수 계산", "type": "main", "index": 0 }]]
     },
     "관련도 점수 계산": {

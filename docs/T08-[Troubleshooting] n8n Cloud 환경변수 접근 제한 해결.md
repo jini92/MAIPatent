@@ -220,4 +220,57 @@ n8n Cloud의 Variables 기능을 활용하여 API 키 저장 및 접근
 
 *작성일: 2026-01-14*
 *해결자: Claude Code*
-*버전: 1.0.0*
+*버전: 1.1.0*
+
+---
+
+## 10. 추가 수정 사항 (2026-01-14)
+
+### 10.1. WF03/WF04 환경변수 수정
+
+WF02와 동일한 `$env` 접근 문제가 WF03, WF04에서도 발견되어 수정 완료.
+
+**WF03-명세서생성 수정 내용**:
+| 노드 | 변경 전 | 변경 후 |
+|------|---------|---------|
+| Google Drive 업로드 (명세서초안) | `$env.GOOGLE_DRIVE_DRAFT_FOLDER_ID` | `$vars.GOOGLE_DRIVE_DRAFT_FOLDER_ID` |
+| Google Sheets 상태 업데이트 | `$env.GOOGLE_SHEETS_TRACKING_ID` | `$vars.GOOGLE_SHEETS_TRACKING_ID` |
+| WF04 검수요청 호출 | `$env.N8N_WEBHOOK_URL` | 하드코딩 URL |
+
+**WF04-명세서검수 수정 내용**:
+| 노드 | 변경 전 | 변경 후 |
+|------|---------|---------|
+| Google Drive 업로드 (승인문서) | `$env.GOOGLE_DRIVE_APPROVED_FOLDER_ID` | `$vars.GOOGLE_DRIVE_APPROVED_FOLDER_ID` |
+| Google Drive 업로드 (반려문서) | `$env.GOOGLE_DRIVE_REJECTED_FOLDER_ID` | `$vars.GOOGLE_DRIVE_REJECTED_FOLDER_ID` |
+| Google Sheets 승인 업데이트 | `$env.GOOGLE_SHEETS_TRACKING_ID` | `$vars.GOOGLE_SHEETS_TRACKING_ID` |
+| Google Sheets 반려 업데이트 | `$env.GOOGLE_SHEETS_TRACKING_ID` | `$vars.GOOGLE_SHEETS_TRACKING_ID` |
+| Google Sheets 수정요청 업데이트 | `$env.GOOGLE_SHEETS_TRACKING_ID` | `$vars.GOOGLE_SHEETS_TRACKING_ID` |
+
+### 10.2. Google Sheets 스키마 추가
+
+모든 Google Sheets 노드에 전체 15개 컬럼 스키마 추가:
+- Patent ID, 발명 명칭, 발명자, 소속, 기술분야, 키워드, 상태, 제출일
+- 발명제안서 URL, 선행기술 URL, 명세서초안 URL, 최종문서 URL
+- 검수완료일, 반려사유, 수정요청사항
+
+### 10.3. Webhook 재등록 ✅ 완료
+
+**문제**: 워크플로우 수정 후 webhook이 자동으로 재등록되지 않음
+
+**증상**: 404 에러 - "The requested webhook is not registered"
+
+**해결 완료** (2026-01-14 Playwright 자동화로 수행):
+```
+1. https://mai-n8n.app.n8n.cloud 접속
+2. WF03-명세서생성: Webhook 노드 Deactivate → Save → Activate → Save ✅
+3. WF04-명세서검수: Webhook 노드 Deactivate → Save → Activate → Save ✅
+```
+
+### 10.4. 수정 완료 현황
+
+| 워크플로우 | `$env` → `$vars` | Google Sheets 스키마 | Webhook 등록 |
+|-----------|------------------|---------------------|-------------|
+| WF01-발명제안서입력 | ✅ (기존 정상) | ✅ (기존 정상) | ✅ 정상 |
+| WF02-선행기술검색 | ✅ 완료 | ✅ 완료 | ✅ 정상 |
+| WF03-명세서생성 | ✅ 완료 | ✅ 완료 | ✅ 재등록 완료 |
+| WF04-명세서검수 | ✅ 완료 | ✅ 완료 | ✅ 재등록 완료 |
