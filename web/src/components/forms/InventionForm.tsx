@@ -26,7 +26,7 @@ import { savePatent, createPatentFromFormData } from '@/lib/patent-storage';
 const stepSchemas = [step1Schema, step2Schema, step3Schema, step4Schema];
 
 interface InventionFormProps {
-  onSuccess?: (executionId: string) => void;
+  onSuccess?: (patentId: string) => void;
 }
 
 export function InventionForm({ onSuccess }: InventionFormProps) {
@@ -137,7 +137,7 @@ export function InventionForm({ onSuccess }: InventionFormProps) {
           keywords: data.keywords,
           inventionSummary: data.inventionSummary,
         },
-        result.executionId
+        result.patent_id
       );
       savePatent(patentData);
 
@@ -145,7 +145,7 @@ export function InventionForm({ onSuccess }: InventionFormProps) {
         setCompletedSteps([...completedSteps, 4]);
       }
 
-      onSuccess?.(result.executionId);
+      onSuccess?.(result.patent_id);
     } catch (error) {
       console.error('Submit error:', error);
       setSubmitError(

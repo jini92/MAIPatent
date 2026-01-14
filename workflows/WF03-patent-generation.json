@@ -99,7 +99,7 @@
         "operation": "upload",
         "folderId": {
           "__rl": true,
-          "value": "={{ $env.GOOGLE_DRIVE_DRAFT_FOLDER_ID }}",
+          "value": "={{ $vars.GOOGLE_DRIVE_DRAFT_FOLDER_ID }}",
           "mode": "id"
         },
         "name": "=명세서초안_{{ $json.patent_id }}_{{ $now.format('yyyyMMdd') }}.md",
@@ -124,7 +124,7 @@
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "value": "={{ $env.GOOGLE_SHEETS_TRACKING_ID }}",
+          "value": "={{ $vars.GOOGLE_SHEETS_TRACKING_ID }}",
           "mode": "id"
         },
         "sheetName": {
@@ -187,7 +187,7 @@
       "position": [3080, 0],
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.N8N_WEBHOOK_URL }}/wf04-review-request",
+        "url": "={{ $vars.N8N_WEBHOOK_URL }}/wf04-review-request",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json) }}",

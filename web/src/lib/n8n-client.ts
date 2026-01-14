@@ -44,8 +44,17 @@ export interface ExecutionStatus {
   data?: unknown;
 }
 
+// WF01 응답 타입
+export interface SubmitInventionResponse {
+  success: boolean;
+  patent_id: string;
+  submission_id: string;
+  message: string;
+  drive_url?: string;
+}
+
 // WF01: 발명 제안서 제출
-export async function submitInvention(data: InventionData): Promise<{ executionId: string }> {
+export async function submitInvention(data: InventionData): Promise<SubmitInventionResponse> {
   const response = await fetch(`${N8N_WEBHOOK_URL}/wf01-invention-input`, {
     method: 'POST',
     headers: {
@@ -58,7 +67,16 @@ export async function submitInvention(data: InventionData): Promise<{ executionI
     throw new Error(`Failed to submit invention: ${response.statusText}`);
   }
 
-  return response.json();
+  const result = await response.json();
+
+  // WF01 응답 정규화 (다양한 응답 형식 호환)
+  return {
+    success: result.success ?? true,
+    patent_id: result.patent_id || result.patentId || result.id || '',
+    submission_id: result.submission_id || result.submissionId || '',
+    message: result.message || '제출이 완료되었습니다.',
+    drive_url: result.drive_url || result.driveUrl,
+  };
 }
 
 // WF02: 선행기술 검색 트리거

@@ -63,6 +63,39 @@
       }
     },
     {
+      "id": "webhook-trigger",
+      "name": "API Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 200],
+      "webhookId": "wf01-invention-input",
+      "parameters": {
+        "path": "wf01-invention-input",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "normalize-webhook-data",
+      "name": "Webhook 데이터 정규화",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 200],
+      "parameters": {
+        "jsCode": "// Webhook에서 받은 데이터를 Form Trigger 형식으로 정규화\nconst input = $input.first().json;\n\n// Webhook payload 구조: { headers, params, query, body }\n// body.invention 또는 직접 invention 객체 추출\nconst invention = input.body?.invention || input.invention || input.body || input;\n\n// Form Trigger 형식으로 매핑\nconst normalizedData = {\n  '발명의 명칭': invention.inventionTitle || invention['발명의 명칭'] || '',\n  '기술분야': invention.technicalField || invention['기술분야'] || '',\n  '해결하려는 과제': invention.technicalProblem || invention['해결하려는 과제'] || '',\n  '발명의 핵심 구성': invention.proposedSolution || invention['발명의 핵심 구성'] || '',\n  '발명의 효과': invention.expectedEffects || invention['발명의 효과'] || '',\n  '출원인': invention.inventorAffiliation || invention['출원인'] || '',\n  '발명자': invention.inventorName || invention['발명자'] || '',\n  'submittedAt': new Date().toISOString(),\n  'formMode': 'webhook'\n};\n\nreturn [{ json: normalizedData }];"
+      }
+    },
+    {
       "id": "validate-code",
       "name": "데이터 검증",
       "type": "n8n-nodes-base.code",
@@ -196,7 +229,7 @@
       "typeVersion": 2,
       "position": [1100, -100],
       "parameters": {
-        "jsCode": "// 발명 제안서를 JSON 파일로 변환\nconst data = $input.first().json;\n\n// Patent ID 생성\nconst patentId = `PAT-${String(Date.now()).slice(-6)}`;\n\nconst proposalData = {\n  patent_id: patentId,\n  submission_id: data.submission_id,\n  invention_title: data.invention_title,\n  technical_field: data.technical_field,\n  problem_to_solve: data.problem_to_solve,\n  solution_description: data.solution_description,\n  advantages: data.advantages,\n  applicant_name: data.applicant_name,\n  inventor_name: data.inventor_name,\n  keywords: data.keywords,\n  suggested_ipc: data.suggested_ipc,\n  submission_date: data.submission_date,\n  status: 'generating'\n};\n\nreturn [{\n  json: proposalData,\n  binary: {\n    data: Buffer.from(JSON.stringify(proposalData, null, 2)).toString('base64')\n  }\n}];"
+        "jsCode": "// 발명 제안서를 JSON 파일로 변환\nconst data = $input.first().json;\n\n// Patent ID 생성\nconst patentId = `PAT-${String(Date.now()).slice(-6)}`;\n\nconst proposalData = {\n  patent_id: patentId,\n  submission_id: data.submission_id,\n  invention_title: data.invention_title,\n  technical_field: data.technical_field,\n  problem_to_solve: data.problem_to_solve,\n  solution_description: data.solution_description,\n  advantages: data.advantages,\n  applicant_name: data.applicant_name,\n  inventor_name: data.inventor_name,\n  keywords: data.keywords,\n  suggested_ipc: data.suggested_ipc,\n  submission_date: data.submission_date,\n  status: 'generating'\n};\n\n// Buffer를 사용하여 올바른 binary 데이터 생성\nconst jsonString = JSON.stringify(proposalData, null, 2);\nconst binaryData = Buffer.from(jsonString, 'utf-8');\n\nreturn [{\n  json: proposalData,\n  binary: {\n    data: {\n      data: binaryData.toString('base64'),\n      mimeType: 'application/json',\n      fileName: `발명제안서_${patentId}.json`\n    }\n  }\n}];"
       }
     },
     {
@@ -209,7 +242,7 @@
         "operation": "upload",
         "folderId": {
           "__rl": true,
-          "value": "={{ $env.GOOGLE_DRIVE_PROPOSAL_FOLDER_ID }}",
+          "value": "={{ $vars.GOOGLE_DRIVE_PROPOSAL_FOLDER_ID }}",
           "mode": "id"
         },
         "name": "=발명제안서_{{ $json.patent_id }}_{{ $now.format('yyyyMMdd') }}.json",
@@ -234,7 +267,7 @@
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "value": "={{ $env.GOOGLE_SHEETS_TRACKING_ID }}",
+          "value": "={{ $vars.GOOGLE_SHEETS_TRACKING_ID }}",
           "mode": "id"
         },
         "sheetName": {
@@ -301,16 +334,65 @@
       "position": [1980, -100],
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.N8N_WEBHOOK_URL }}/wf02-prior-art-search",
+        "url": "https://mai-n8n.app.n8n.cloud/webhook/wf02-prior-art-search",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json) }}",
         "options": {}
       }
+    },
+    {
+      "id": "webhook-response-success",
+      "name": "Webhook 성공 응답",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2200, -100],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, patent_id: $('JSON 파일 변환').item.json.patent_id, submission_id: $('JSON 파일 변환').item.json.submission_id, message: '발명제안서가 성공적으로 제출되었습니다.', drive_url: $('Google Drive 업로드 (발명제안서)').item.json.webViewLink } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "webhook-response-error",
+      "name": "Webhook 오류 응답",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [880, 100],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: false, message: '입력 데이터 검증에 실패했습니다.', errors: $json.errors } }}",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      }
     }
   ],
   "connections": {
     "발명제안서 Form": {
+      "main": [[{ "node": "데이터 검증", "type": "main", "index": 0 }]]
+    },
+    "API Webhook": {
+      "main": [[{ "node": "Webhook 데이터 정규화", "type": "main", "index": 0 }]]
+    },
+    "Webhook 데이터 정규화": {
       "main": [[{ "node": "데이터 검증", "type": "main", "index": 0 }]]
     },
     "데이터 검증": {
@@ -339,6 +421,12 @@
     },
     "URL 포함 출력 설정": {
       "main": [[{ "node": "WF02 선행기술검색 호출", "type": "main", "index": 0 }]]
+    },
+    "WF02 선행기술검색 호출": {
+      "main": [[{ "node": "Webhook 성공 응답", "type": "main", "index": 0 }]]
+    },
+    "오류 응답": {
+      "main": [[{ "node": "Webhook 오류 응답", "type": "main", "index": 0 }]]
     }
   },
   "settings": {

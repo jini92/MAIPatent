@@ -72,7 +72,7 @@
         "operation": "upload",
         "folderId": {
           "__rl": true,
-          "value": "={{ $env.GOOGLE_DRIVE_APPROVED_FOLDER_ID }}",
+          "value": "={{ $vars.GOOGLE_DRIVE_APPROVED_FOLDER_ID }}",
           "mode": "id"
         },
         "name": "=승인_{{ $json.patent_id }}_{{ $now.format('yyyyMMdd') }}.md",
@@ -97,7 +97,7 @@
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "value": "={{ $env.GOOGLE_SHEETS_TRACKING_ID }}",
+          "value": "={{ $vars.GOOGLE_SHEETS_TRACKING_ID }}",
           "mode": "id"
         },
         "sheetName": {
@@ -170,7 +170,7 @@
         "operation": "upload",
         "folderId": {
           "__rl": true,
-          "value": "={{ $env.GOOGLE_DRIVE_REJECTED_FOLDER_ID }}",
+          "value": "={{ $vars.GOOGLE_DRIVE_REJECTED_FOLDER_ID }}",
           "mode": "id"
         },
         "name": "=반려_{{ $json.patent_id }}_{{ $now.format('yyyyMMdd') }}.md",
@@ -195,7 +195,7 @@
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "value": "={{ $env.GOOGLE_SHEETS_TRACKING_ID }}",
+          "value": "={{ $vars.GOOGLE_SHEETS_TRACKING_ID }}",
           "mode": "id"
         },
         "sheetName": {
@@ -234,7 +234,7 @@
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "value": "={{ $env.GOOGLE_SHEETS_TRACKING_ID }}",
+          "value": "={{ $vars.GOOGLE_SHEETS_TRACKING_ID }}",
           "mode": "id"
         },
         "sheetName": {

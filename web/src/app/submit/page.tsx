@@ -9,13 +9,14 @@ import { InventionForm } from '@/components/forms/InventionForm';
 
 export default function SubmitPage() {
   const router = useRouter();
-  const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [submittedPatentId, setSubmittedPatentId] = useState<string | null>(null);
 
-  const handleSuccess = (executionId: string) => {
-    setSubmittedId(executionId);
+  const handleSuccess = (patentId: string) => {
+    console.log('Submit success, patentId:', patentId);
+    setSubmittedPatentId(patentId);
   };
 
-  if (submittedId) {
+  if (submittedPatentId) {
     return (
       <div className="max-w-2xl mx-auto py-12">
         <Card>
@@ -30,8 +31,8 @@ export default function SubmitPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="rounded-lg bg-muted p-4">
-              <p className="text-sm text-muted-foreground mb-1">실행 ID</p>
-              <p className="font-mono text-sm">{submittedId}</p>
+              <p className="text-sm text-muted-foreground mb-1">특허 ID</p>
+              <p className="font-mono text-sm">{submittedPatentId}</p>
             </div>
 
             <div className="space-y-2">
@@ -47,7 +48,7 @@ export default function SubmitPage() {
             <div className="flex gap-4">
               <Button
                 className="flex-1"
-                onClick={() => router.push(`/tracking/?id=${submittedId}`)}
+                onClick={() => router.push(`/tracking/?id=${submittedPatentId}`)}
               >
                 진행 상황 확인
               </Button>
@@ -63,7 +64,7 @@ export default function SubmitPage() {
             <Button
               variant="link"
               className="w-full"
-              onClick={() => setSubmittedId(null)}
+              onClick={() => setSubmittedPatentId(null)}
             >
               새로운 발명 제안서 작성
             </Button>
