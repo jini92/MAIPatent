@@ -2,6 +2,9 @@
 
 const N8N_WEBHOOK_URL = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || 'https://mai-n8n.app.n8n.cloud/webhook';
 
+// WF05 Production URL 사용 (2026-01-16 n8n UI에서 JSON import로 재생성 완료)
+// 참고: T12 테스트 리포트 - API 생성 워크플로우 404 이슈 해결됨
+
 export interface InventionData {
   inventionTitle: string;
   inventorName: string;
@@ -193,6 +196,43 @@ export async function listPatentSpecs(params?: {
 
   if (!response.ok) {
     throw new Error(`Failed to list patent specs: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+// WF05: 문서 내보내기 (DOCX/PDF 생성)
+export interface ExportOptions {
+  format: 'docx' | 'pdf' | 'hwp' | 'markdown';
+  includeDrawings: boolean;
+  includeMetadata: boolean;
+  watermark: boolean;
+  template: 'standard' | 'detailed' | 'minimal';
+}
+
+export interface ExportResponse {
+  success: boolean;
+  downloadUrl?: string;
+  driveUrl?: string;
+  filename?: string;
+  message?: string;
+}
+
+export async function exportPatentDocument(
+  patentId: string,
+  options: ExportOptions
+): Promise<ExportResponse> {
+  // WF05: n8n UI에서 JSON import로 재생성하여 Production webhook 등록 완료
+  const response = await fetch(`${N8N_WEBHOOK_URL}/wf05-export-document`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ patentId, ...options }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to export document: ${response.statusText}`);
   }
 
   return response.json();

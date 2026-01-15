@@ -1,37 +1,71 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft, FileOutput } from 'lucide-react';
+import { ArrowLeft, FileOutput, AlertCircle, ExternalLink } from 'lucide-react';
 import ExportPanel from '@/components/export/ExportPanel';
+import { exportPatentDocument, ExportOptions as N8nExportOptions } from '@/lib/n8n-client';
 
 function ExportContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const patentId = searchParams.get('id') || 'PAT-001';
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [driveUrl, setDriveUrl] = useState<string | null>(null);
 
   // Mock 특허 데이터
   const patentTitle = '인공지능 기반 특허 명세서 자동 생성 시스템 및 방법';
 
-  const handleExport = async (options: { format: string }) => {
+  const handleExport = async (options: { format: string; includeDrawings?: boolean; includeMetadata?: boolean; watermark?: boolean; template?: string }) => {
     console.log('Exporting with options:', options);
+    setExportError(null);
+    setDriveUrl(null);
 
-    // Mock 내보내기 처리
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      // n8n WF05 워크플로우 호출
+      const exportOptions: N8nExportOptions = {
+        format: options.format as N8nExportOptions['format'],
+        includeDrawings: options.includeDrawings ?? true,
+        includeMetadata: options.includeMetadata ?? true,
+        watermark: options.watermark ?? false,
+        template: (options.template as N8nExportOptions['template']) ?? 'standard',
+      };
 
-    // 실제 구현에서는 API 호출 후 파일 다운로드
-    // 여기서는 mock blob을 생성하여 다운로드 시뮬레이션
-    const mockContent = `【발명의 명칭】\n${patentTitle}\n\n【기술분야】\n본 발명은 인공지능 기술을 활용한 특허 명세서 자동 생성 시스템에 관한 것이다.`;
+      const result = await exportPatentDocument(patentId, exportOptions);
 
-    const blob = new Blob([mockContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${patentId}_명세서.${options.format === 'docx' ? 'docx' : options.format === 'pdf' ? 'pdf' : 'md'}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      if (result.success && result.downloadUrl) {
+        // n8n에서 반환한 다운로드 URL로 파일 다운로드
+        const a = document.createElement('a');
+        a.href = result.downloadUrl;
+        a.download = result.filename || `${patentId}_명세서.${options.format}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        if (result.driveUrl) {
+          setDriveUrl(result.driveUrl);
+        }
+      } else {
+        throw new Error(result.message || '문서 생성에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      setExportError(error instanceof Error ? error.message : '내보내기 중 오류가 발생했습니다.');
+
+      // Fallback: Mock 데이터로 다운로드 (n8n 연동 실패 시)
+      console.log('Falling back to mock export...');
+      const mockContent = `【발명의 명칭】\n${patentTitle}\n\n【기술분야】\n본 발명은 인공지능 기술을 활용한 특허 명세서 자동 생성 시스템에 관한 것이다.\n\n※ 이 파일은 Mock 데이터입니다. 실제 문서 생성은 n8n WF05 워크플로우 연동이 필요합니다.`;
+
+      const blob = new Blob([mockContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${patentId}_명세서_mock.${options.format === 'docx' ? 'docx' : options.format === 'pdf' ? 'pdf' : 'md'}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   };
 
   return (
@@ -59,6 +93,36 @@ function ExportContent() {
 
       {/* 메인 컨텐츠 */}
       <div className="max-w-4xl mx-auto px-6 py-8">
+        {/* n8n 연동 상태 표시 */}
+        {exportError && (
+          <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-yellow-800">n8n 워크플로우 연동 알림</p>
+              <p className="text-sm text-yellow-700">{exportError}</p>
+              <p className="text-xs text-yellow-600 mt-1">Mock 파일로 대체 다운로드됩니다. 실제 DOCX/PDF 생성은 WF05 워크플로우 활성화가 필요합니다.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Google Drive 링크 표시 */}
+        {driveUrl && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+            <ExternalLink className="w-5 h-5 text-green-600 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-green-800">문서가 Google Drive에 저장되었습니다</p>
+              <a
+                href={driveUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-green-700 underline hover:text-green-800"
+              >
+                Google Drive에서 열기
+              </a>
+            </div>
+          </div>
+        )}
+
         <ExportPanel
           patentId={patentId}
           patentTitle={patentTitle}
