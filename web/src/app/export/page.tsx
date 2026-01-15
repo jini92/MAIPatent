@@ -21,6 +21,12 @@ function ExportContent() {
     setExportError(null);
     setDriveUrl(null);
 
+    // HWP 형식 미지원 안내
+    if (options.format === 'hwp') {
+      setExportError('HWP 형식은 현재 지원되지 않습니다. DOCX 또는 PDF 형식을 사용해주세요.');
+      return;
+    }
+
     try {
       // n8n WF05 워크플로우 호출
       const exportOptions: N8nExportOptions = {
@@ -46,11 +52,23 @@ function ExportContent() {
           setDriveUrl(result.driveUrl);
         }
       } else {
-        throw new Error(result.message || '문서 생성에 실패했습니다.');
+        // 에러 응답 처리
+        const errorMessage = result.error === 'FORMAT_NOT_SUPPORTED'
+          ? 'HWP 형식은 현재 지원되지 않습니다. DOCX 또는 PDF 형식을 사용해주세요.'
+          : result.error === 'FILE_NOT_FOUND'
+          ? '명세서 파일이 아직 생성되지 않았습니다. 먼저 명세서 생성을 완료해주세요.'
+          : result.message || '문서 생성에 실패했습니다.';
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Export error:', error);
-      setExportError(error instanceof Error ? error.message : '내보내기 중 오류가 발생했습니다.');
+      const errorMsg = error instanceof Error ? error.message : '내보내기 중 오류가 발생했습니다.';
+      setExportError(errorMsg);
+
+      // HWP나 지원하지 않는 형식이면 Fallback하지 않음
+      if (errorMsg.includes('지원되지 않습니다') || errorMsg.includes('생성되지 않았습니다')) {
+        return;
+      }
 
       // Fallback: Mock 데이터로 다운로드 (n8n 연동 실패 시)
       console.log('Falling back to mock export...');
@@ -145,10 +163,10 @@ function ExportContent() {
                 인쇄나 공식 제출용으로 권장. 레이아웃이 고정되어 배포에 적합합니다.
               </p>
             </div>
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="font-medium text-gray-900">HWP (한글)</p>
+            <div className="p-3 bg-gray-50 rounded-lg opacity-60">
+              <p className="font-medium text-gray-900">HWP (한글) <span className="text-xs text-orange-600">준비 중</span></p>
               <p className="text-gray-500 text-xs mt-1">
-                한글 문서 편집 시 권장. 한국 특허청 제출 형식에 적합합니다.
+                현재 지원되지 않습니다. DOCX로 내보낸 후 한글에서 열어주세요.
               </p>
             </div>
             <div className="p-3 bg-gray-50 rounded-lg">

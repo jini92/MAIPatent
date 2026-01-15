@@ -1,7 +1,7 @@
 {
   "name": "WF05-문서내보내기",
   "id": "wf05ExportDoc",
-  "description": "특허 명세서 DOCX/PDF/HWP 문서 생성 및 다운로드 워크플로우",
+  "description": "특허 명세서 DOCX/PDF/Markdown 문서 생성 및 다운로드 워크플로우 - Google Drive Export 활용",
   "active": false,
   "nodes": [
     {
@@ -44,9 +44,7 @@
           "value": "제출이력",
           "mode": "name"
         },
-        "options": {
-          "filter": "Patent ID = '{{ $json.patentId }}'"
-        }
+        "options": {}
       },
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -56,23 +54,53 @@
       }
     },
     {
-      "id": "get-patent-content",
-      "name": "Google Drive 명세서 내용 조회",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
+      "id": "filter-patent",
+      "name": "특허 ID 필터링",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [660, 0],
       "parameters": {
-        "operation": "download",
-        "fileId": {
-          "__rl": true,
-          "value": "={{ $json['명세서 파일 ID'] }}",
-          "mode": "id"
+        "jsCode": "const patentId = $('요청 파싱').item.json.patentId;\nconst allItems = $input.all();\n\n// Patent ID로 필터링\nconst matchingItem = allItems.find(item => \n  item.json['Patent ID'] === patentId || \n  item.json['patent_id'] === patentId ||\n  item.json['patentId'] === patentId\n);\n\nif (!matchingItem) {\n  throw new Error(`Patent not found: ${patentId}`);\n}\n\nreturn {\n  patentId: patentId,\n  title: matchingItem.json['발명의 명칭'] || matchingItem.json['title'] || '특허 명세서',\n  fileId: matchingItem.json['명세서 파일 ID'] || matchingItem.json['fileId'],\n  status: matchingItem.json['상태'] || matchingItem.json['status'],\n  format: $('요청 파싱').item.json.format,\n  includeMetadata: $('요청 파싱').item.json.includeMetadata\n};"
+      }
+    },
+    {
+      "id": "validate-file-id",
+      "name": "파일 ID 검증",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [880, 0],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.fileId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
         }
-      },
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "google-drive-credentials",
-          "name": "Google Drive OAuth2"
+      }
+    },
+    {
+      "id": "error-no-file",
+      "name": "파일 없음 에러",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1100, 150],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"error\": \"FILE_NOT_FOUND\",\n  \"message\": \"명세서 파일이 아직 생성되지 않았습니다. 먼저 WF03을 통해 명세서를 생성해주세요.\",\n  \"patentId\": \"{{ $json.patentId }}\"\n}",
+        "options": {
+          "responseCode": 404
         }
       }
     },
@@ -81,7 +109,7 @@
       "name": "출력 형식 라우터",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [880, 0],
+      "position": [1100, -100],
       "parameters": {
         "rules": {
           "values": [
@@ -90,7 +118,7 @@
               "conditions": {
                 "conditions": [
                   {
-                    "leftValue": "={{ $('요청 파싱').item.json.format }}",
+                    "leftValue": "={{ $json.format }}",
                     "rightValue": "docx",
                     "operator": { "type": "string", "operation": "equals" }
                   }
@@ -102,20 +130,8 @@
               "conditions": {
                 "conditions": [
                   {
-                    "leftValue": "={{ $('요청 파싱').item.json.format }}",
+                    "leftValue": "={{ $json.format }}",
                     "rightValue": "pdf",
-                    "operator": { "type": "string", "operation": "equals" }
-                  }
-                ]
-              }
-            },
-            {
-              "outputKey": "hwp",
-              "conditions": {
-                "conditions": [
-                  {
-                    "leftValue": "={{ $('요청 파싱').item.json.format }}",
-                    "rightValue": "hwp",
                     "operator": { "type": "string", "operation": "equals" }
                   }
                 ]
@@ -126,8 +142,20 @@
               "conditions": {
                 "conditions": [
                   {
-                    "leftValue": "={{ $('요청 파싱').item.json.format }}",
+                    "leftValue": "={{ $json.format }}",
                     "rightValue": "markdown",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              }
+            },
+            {
+              "outputKey": "hwp",
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.format }}",
+                    "rightValue": "hwp",
                     "operator": { "type": "string", "operation": "equals" }
                   }
                 ]
@@ -138,72 +166,25 @@
       }
     },
     {
-      "id": "generate-docx",
-      "name": "DOCX 생성",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1100, -150],
-      "parameters": {
-        "jsCode": "// DOCX 생성 로직 (docx 라이브러리 사용)\n// 실제 구현에서는 docx npm 패키지를 사용하여 바이너리 생성\nconst content = $input.first().json.content;\nconst patentId = $('요청 파싱').item.json.patentId;\nconst includeMetadata = $('요청 파싱').item.json.includeMetadata;\n\nreturn {\n  filename: `${patentId}_명세서.docx`,\n  content: content,\n  mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',\n  metadata: includeMetadata ? { created: new Date().toISOString(), patentId } : null\n};"
-      }
-    },
-    {
-      "id": "generate-pdf",
-      "name": "PDF 생성",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1100, -50],
-      "parameters": {
-        "jsCode": "// PDF 생성 로직 (pdf-lib 또는 puppeteer 사용)\nconst content = $input.first().json.content;\nconst patentId = $('요청 파싱').item.json.patentId;\nconst watermark = $('요청 파싱').item.json.watermark;\n\nreturn {\n  filename: `${patentId}_명세서.pdf`,\n  content: content,\n  mimeType: 'application/pdf',\n  watermark: watermark ? 'DRAFT' : null\n};"
-      }
-    },
-    {
-      "id": "generate-hwp",
-      "name": "HWP 생성",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1100, 50],
-      "parameters": {
-        "jsCode": "// HWP 생성 로직 (hwp.js 사용 또는 외부 변환 서비스)\nconst content = $input.first().json.content;\nconst patentId = $('요청 파싱').item.json.patentId;\n\nreturn {\n  filename: `${patentId}_명세서.hwp`,\n  content: content,\n  mimeType: 'application/x-hwp'\n};"
-      }
-    },
-    {
-      "id": "generate-markdown",
-      "name": "Markdown 내보내기",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1100, 150],
-      "parameters": {
-        "jsCode": "const content = $input.first().json.content;\nconst patentId = $('요청 파싱').item.json.patentId;\n\nreturn {\n  filename: `${patentId}_명세서.md`,\n  content: content,\n  mimeType: 'text/markdown'\n};"
-      }
-    },
-    {
-      "id": "merge-formats",
-      "name": "결과 병합",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
-      "position": [1320, 0],
-      "parameters": {
-        "mode": "chooseBranch",
-        "output": "all"
-      }
-    },
-    {
-      "id": "upload-to-drive",
-      "name": "Google Drive 업로드",
+      "id": "export-docx",
+      "name": "DOCX 내보내기",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
-      "position": [1540, 0],
+      "position": [1320, -250],
       "parameters": {
-        "operation": "upload",
-        "folderId": {
+        "operation": "download",
+        "fileId": {
           "__rl": true,
-          "value": "={{ $vars.GOOGLE_DRIVE_EXPORTS_FOLDER_ID }}",
+          "value": "={{ $json.fileId }}",
           "mode": "id"
         },
-        "name": "={{ $json.filename }}",
         "options": {
-          "mimeType": "={{ $json.mimeType }}"
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            }
+          },
+          "fileName": "={{ $json.patentId }}_명세서.docx"
         }
       },
       "credentials": {
@@ -214,22 +195,206 @@
       }
     },
     {
-      "id": "prepare-response",
-      "name": "응답 준비",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [1760, 0],
+      "id": "export-pdf",
+      "name": "PDF 내보내기",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1320, -100],
       "parameters": {
-        "mode": "raw",
-        "jsonOutput": "={\n  \"success\": true,\n  \"downloadUrl\": \"{{ $json.webContentLink }}\",\n  \"driveUrl\": \"{{ $json.webViewLink }}\",\n  \"filename\": \"{{ $('결과 병합').item.json.filename }}\",\n  \"message\": \"문서가 성공적으로 생성되었습니다.\"\n}"
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.fileId }}",
+          "mode": "id"
+        },
+        "options": {
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "application/pdf"
+            }
+          },
+          "fileName": "={{ $json.patentId }}_명세서.pdf"
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "google-drive-credentials",
+          "name": "Google Drive OAuth2"
+        }
       }
     },
     {
-      "id": "respond-webhook",
-      "name": "Webhook 응답",
+      "id": "export-text",
+      "name": "텍스트 내보내기",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1320, 50],
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.fileId }}",
+          "mode": "id"
+        },
+        "options": {
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "text/plain"
+            }
+          },
+          "fileName": "={{ $json.patentId }}_명세서.txt"
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "google-drive-credentials",
+          "name": "Google Drive OAuth2"
+        }
+      }
+    },
+    {
+      "id": "convert-to-markdown",
+      "name": "Markdown 변환",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 50],
+      "parameters": {
+        "jsCode": "// 텍스트를 Markdown 형식으로 변환\nconst binaryData = $input.first().binary;\nconst patentId = $('특허 ID 필터링').item.json.patentId;\nconst title = $('특허 ID 필터링').item.json.title;\n\nlet textContent = '';\n\n// 바이너리 데이터에서 텍스트 추출\nif (binaryData && binaryData.data) {\n  const buffer = Buffer.from(binaryData.data.data, 'base64');\n  textContent = buffer.toString('utf-8');\n} else {\n  textContent = '# ' + title + '\\n\\n내용을 불러올 수 없습니다.';\n}\n\n// Markdown 형식으로 포맷팅\nconst markdownContent = `# ${title}\\n\\n${textContent}`;\n\n// 바이너리 데이터로 반환\nconst outputBuffer = Buffer.from(markdownContent, 'utf-8');\n\nreturn {\n  json: {\n    patentId: patentId,\n    filename: `${patentId}_명세서.md`,\n    mimeType: 'text/markdown'\n  },\n  binary: {\n    data: {\n      data: outputBuffer.toString('base64'),\n      mimeType: 'text/markdown',\n      fileName: `${patentId}_명세서.md`\n    }\n  }\n};"
+      }
+    },
+    {
+      "id": "hwp-not-supported",
+      "name": "HWP 미지원 응답",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1980, 0],
+      "position": [1320, 200],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"error\": \"FORMAT_NOT_SUPPORTED\",\n  \"message\": \"HWP 형식은 현재 지원되지 않습니다. DOCX 또는 PDF 형식을 사용해주세요.\",\n  \"supportedFormats\": [\"docx\", \"pdf\", \"markdown\"]\n}",
+        "options": {
+          "responseCode": 400
+        }
+      }
+    },
+    {
+      "id": "set-docx-metadata",
+      "name": "DOCX 메타데이터 설정",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1540, -250],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "filename",
+              "name": "filename",
+              "value": "={{ $('특허 ID 필터링').item.json.patentId }}_명세서.docx",
+              "type": "string"
+            },
+            {
+              "id": "mimeType",
+              "name": "mimeType",
+              "value": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              "type": "string"
+            },
+            {
+              "id": "patentId",
+              "name": "patentId",
+              "value": "={{ $('특허 ID 필터링').item.json.patentId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true
+      }
+    },
+    {
+      "id": "set-pdf-metadata",
+      "name": "PDF 메타데이터 설정",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1540, -100],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "filename",
+              "name": "filename",
+              "value": "={{ $('특허 ID 필터링').item.json.patentId }}_명세서.pdf",
+              "type": "string"
+            },
+            {
+              "id": "mimeType",
+              "name": "mimeType",
+              "value": "application/pdf",
+              "type": "string"
+            },
+            {
+              "id": "patentId",
+              "name": "patentId",
+              "value": "={{ $('특허 ID 필터링').item.json.patentId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true
+      }
+    },
+    {
+      "id": "merge-formats",
+      "name": "결과 병합",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1760, -100],
+      "parameters": {
+        "mode": "chooseBranch",
+        "output": "all"
+      }
+    },
+    {
+      "id": "upload-to-exports",
+      "name": "Exports 폴더에 업로드",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1980, -100],
+      "parameters": {
+        "operation": "upload",
+        "folderId": {
+          "__rl": true,
+          "value": "={{ $vars.GOOGLE_DRIVE_EXPORTS_FOLDER_ID }}",
+          "mode": "id"
+        },
+        "name": "={{ $json.filename }}",
+        "inputDataFieldName": "data"
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "google-drive-credentials",
+          "name": "Google Drive OAuth2"
+        }
+      }
+    },
+    {
+      "id": "prepare-success-response",
+      "name": "성공 응답 준비",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2200, -100],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"success\": true,\n  \"downloadUrl\": \"{{ $json.webContentLink }}\",\n  \"driveUrl\": \"{{ $json.webViewLink }}\",\n  \"fileId\": \"{{ $json.id }}\",\n  \"filename\": \"{{ $('결과 병합').item.json.filename }}\",\n  \"format\": \"{{ $('요청 파싱').item.json.format }}\",\n  \"message\": \"문서가 성공적으로 생성되었습니다.\"\n}"
+      }
+    },
+    {
+      "id": "respond-success",
+      "name": "성공 응답",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2420, -100],
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ $json }}"
@@ -244,59 +409,77 @@
       "main": [[{"node": "Google Sheets 특허 데이터 조회", "type": "main", "index": 0}]]
     },
     "Google Sheets 특허 데이터 조회": {
-      "main": [[{"node": "Google Drive 명세서 내용 조회", "type": "main", "index": 0}]]
+      "main": [[{"node": "특허 ID 필터링", "type": "main", "index": 0}]]
     },
-    "Google Drive 명세서 내용 조회": {
-      "main": [[{"node": "출력 형식 라우터", "type": "main", "index": 0}]]
+    "특허 ID 필터링": {
+      "main": [[{"node": "파일 ID 검증", "type": "main", "index": 0}]]
+    },
+    "파일 ID 검증": {
+      "main": [
+        [{"node": "출력 형식 라우터", "type": "main", "index": 0}],
+        [{"node": "파일 없음 에러", "type": "main", "index": 0}]
+      ]
     },
     "출력 형식 라우터": {
       "main": [
-        [{"node": "DOCX 생성", "type": "main", "index": 0}],
-        [{"node": "PDF 생성", "type": "main", "index": 0}],
-        [{"node": "HWP 생성", "type": "main", "index": 0}],
-        [{"node": "Markdown 내보내기", "type": "main", "index": 0}]
+        [{"node": "DOCX 내보내기", "type": "main", "index": 0}],
+        [{"node": "PDF 내보내기", "type": "main", "index": 0}],
+        [{"node": "텍스트 내보내기", "type": "main", "index": 0}],
+        [{"node": "HWP 미지원 응답", "type": "main", "index": 0}]
       ]
     },
-    "DOCX 생성": {
+    "DOCX 내보내기": {
+      "main": [[{"node": "DOCX 메타데이터 설정", "type": "main", "index": 0}]]
+    },
+    "PDF 내보내기": {
+      "main": [[{"node": "PDF 메타데이터 설정", "type": "main", "index": 0}]]
+    },
+    "텍스트 내보내기": {
+      "main": [[{"node": "Markdown 변환", "type": "main", "index": 0}]]
+    },
+    "DOCX 메타데이터 설정": {
       "main": [[{"node": "결과 병합", "type": "main", "index": 0}]]
     },
-    "PDF 생성": {
+    "PDF 메타데이터 설정": {
       "main": [[{"node": "결과 병합", "type": "main", "index": 1}]]
     },
-    "HWP 생성": {
+    "Markdown 변환": {
       "main": [[{"node": "결과 병합", "type": "main", "index": 2}]]
     },
-    "Markdown 내보내기": {
-      "main": [[{"node": "결과 병합", "type": "main", "index": 3}]]
-    },
     "결과 병합": {
-      "main": [[{"node": "Google Drive 업로드", "type": "main", "index": 0}]]
+      "main": [[{"node": "Exports 폴더에 업로드", "type": "main", "index": 0}]]
     },
-    "Google Drive 업로드": {
-      "main": [[{"node": "응답 준비", "type": "main", "index": 0}]]
+    "Exports 폴더에 업로드": {
+      "main": [[{"node": "성공 응답 준비", "type": "main", "index": 0}]]
     },
-    "응답 준비": {
-      "main": [[{"node": "Webhook 응답", "type": "main", "index": 0}]]
+    "성공 응답 준비": {
+      "main": [[{"node": "성공 응답", "type": "main", "index": 0}]]
     }
   },
   "settings": {
     "executionOrder": "v1"
   },
   "meta": {
-    "version": "1.0.0",
+    "version": "2.0.0",
     "created": "2026-01-15",
+    "updated": "2026-01-16",
     "project": "MAIPatent",
     "workflow_sequence": 5,
-    "supported_formats": ["docx", "pdf", "hwp", "markdown"],
+    "supported_formats": ["docx", "pdf", "markdown"],
+    "unsupported_formats": ["hwp"],
+    "implementation_notes": [
+      "Google Drive Export API를 활용하여 Google Docs 문서를 DOCX/PDF로 변환",
+      "실제 바이너리 파일 생성 - Mock 데이터 아님",
+      "HWP 형식은 Google API에서 지원하지 않아 미지원 처리",
+      "Exports 폴더에 파일 저장 후 다운로드 URL 반환"
+    ],
     "dependencies": {
-      "docx_generation": "docx npm package or Google Docs API",
-      "pdf_generation": "pdf-lib, puppeteer, or Google Docs API",
-      "hwp_generation": "hwp.js or external conversion service"
+      "google_drive_oauth": "Google Drive API v3 with OAuth2",
+      "google_sheets_oauth": "Google Sheets API v4 with OAuth2"
     },
-    "notes": [
-      "실제 DOCX/PDF 바이너리 생성은 추가 라이브러리 또는 외부 서비스가 필요합니다.",
-      "Google Docs API를 사용하면 문서 변환을 쉽게 할 수 있습니다.",
-      "대안: n8n의 HTTP Request 노드로 외부 문서 변환 API 호출"
-    ]
+    "error_handling": {
+      "file_not_found": "404 - 명세서 파일 미존재 시 안내 메시지",
+      "unsupported_format": "400 - HWP 요청 시 지원 형식 안내"
+    }
   }
 }

@@ -214,8 +214,11 @@ export interface ExportResponse {
   success: boolean;
   downloadUrl?: string;
   driveUrl?: string;
+  fileId?: string;
   filename?: string;
+  format?: string;
   message?: string;
+  error?: 'FILE_NOT_FOUND' | 'FORMAT_NOT_SUPPORTED' | string;
 }
 
 export async function exportPatentDocument(
