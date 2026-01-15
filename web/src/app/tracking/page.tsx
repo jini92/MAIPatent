@@ -19,12 +19,14 @@ const stepIcons: Record<string, React.ElementType> = {
 function TrackingContent() {
   const searchParams = useSearchParams();
   const executionId = searchParams.get('id');
+  const patentId = searchParams.get('patentId'); // localStorage 상태 동기화용
   const [showPreview, setShowPreview] = useState(false);
 
   const { state, isLoading, error, refetch } = useExecutionStatus(executionId, {
     pollingInterval: 2000,
     enableMock: true,
     mockProgressSpeed: 3,
+    patentId: patentId || undefined, // localStorage 상태 업데이트용
   });
 
   if (!executionId) {

@@ -220,7 +220,7 @@ export const PatentTable: React.FC<PatentTableProps> = ({
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <Link href={`/tracking/?id=${patent.id}`}>
+                      <Link href={`/tracking/?id=${patent.id}&patentId=${patent.id}`}>
                         <button
                           className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                           title="보기"

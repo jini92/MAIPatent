@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   getStoredPatents,
   initializeWithSampleData,
+  cleanupStaleGeneratingPatents,
   StoredPatent,
 } from '@/lib/patent-storage';
 
@@ -154,6 +155,9 @@ export function useDashboardStats(): UseDashboardStatsReturn {
     try {
       // 샘플 데이터 초기화 (데이터가 없을 경우만)
       initializeWithSampleData();
+
+      // 오래된 "생성 중" 상태 정리 (7일 이상 경과)
+      cleanupStaleGeneratingPatents();
 
       // localStorage에서 특허 데이터 로드
       const storedPatents = getStoredPatents();

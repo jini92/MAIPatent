@@ -48,7 +48,7 @@ export default function SubmitPage() {
             <div className="flex gap-4">
               <Button
                 className="flex-1"
-                onClick={() => router.push(`/tracking/?id=${submittedPatentId}`)}
+                onClick={() => router.push(`/tracking/?id=${submittedPatentId}&patentId=${submittedPatentId}`)}
               >
                 진행 상황 확인
               </Button>

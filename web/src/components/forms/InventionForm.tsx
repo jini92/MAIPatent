@@ -137,15 +137,16 @@ export function InventionForm({ onSuccess }: InventionFormProps) {
           keywords: data.keywords,
           inventionSummary: data.inventionSummary,
         },
-        result.patent_id
+        result.patent_id // n8n에서 받은 ID를 executionId로 저장
       );
-      savePatent(patentData);
+      const savedPatent = savePatent(patentData);
 
       if (!completedSteps.includes(4)) {
         setCompletedSteps([...completedSteps, 4]);
       }
 
-      onSuccess?.(result.patent_id);
+      // localStorage에 저장된 실제 특허 ID 반환 (PAT-XXX 형식)
+      onSuccess?.(savedPatent.id);
     } catch (error) {
       console.error('Submit error:', error);
       setSubmitError(

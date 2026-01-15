@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { updatePatentStatus, getStoredPatents } from '@/lib/patent-storage';
+import { PatentStatus } from '@/hooks/useDashboardStats';
 
 // 워크플로우 단계 상태
 export type StepStatus = 'pending' | 'running' | 'completed' | 'error';
@@ -146,6 +148,32 @@ interface UseExecutionStatusOptions {
   pollingInterval?: number; // ms, default 2000
   enableMock?: boolean; // 개발용 mock 데이터 사용
   mockProgressSpeed?: number; // mock 진행 속도 (초당 스테이지)
+  patentId?: string; // localStorage 상태 동기화용 특허 ID
+}
+
+// 워크플로우 상태를 PatentStatus로 매핑
+function mapWorkflowToPatentStatus(overallStatus: string, currentStep: number): PatentStatus {
+  if (overallStatus === 'error') return 'rejected';
+  if (overallStatus === 'completed') return 'reviewing'; // WF04 완료 = 검수 대기
+  if (currentStep >= 3) return 'reviewing'; // WF03 완료 이후 = 검수 중
+  if (currentStep >= 1) return 'generating'; // WF01~WF02 = 생성 중
+  return 'draft';
+}
+
+// executionId로 localStorage에서 특허 찾기
+// executionId가 PAT-XXX 형식이면 직접 ID로 사용, 아니면 executionId 필드로 검색
+function findPatentByExecutionId(executionId: string): string | null {
+  const patents = getStoredPatents();
+
+  // PAT-XXX 형식이면 직접 ID로 사용
+  if (executionId.startsWith('PAT-')) {
+    const patent = patents.find(p => p.id === executionId);
+    if (patent) return patent.id;
+  }
+
+  // executionId 필드로 검색
+  const patent = patents.find(p => p.executionId === executionId);
+  return patent?.id || null;
 }
 
 interface UseExecutionStatusReturn {
@@ -163,6 +191,7 @@ export function useExecutionStatus(
     pollingInterval = 2000,
     enableMock = true, // 기본적으로 mock 사용 (개발 단계)
     mockProgressSpeed = 3, // 3초마다 다음 스테이지
+    patentId: providedPatentId,
   } = options;
 
   const [state, setState] = useState<ExecutionState | null>(null);
@@ -180,6 +209,35 @@ export function useExecutionStatus(
 
     return () => clearInterval(timer);
   }, [enableMock, executionId, mockProgressSpeed]);
+
+  // 워크플로우 상태 변경 시 localStorage 동기화
+  useEffect(() => {
+    if (!state || !executionId) {
+      console.log('[useExecutionStatus] Skipping: no state or executionId', { state: !!state, executionId });
+      return;
+    }
+
+    // 제공된 patentId 또는 executionId로 특허 찾기
+    const patentId = providedPatentId || findPatentByExecutionId(executionId);
+    console.log('[useExecutionStatus] Finding patent:', { providedPatentId, executionId, foundPatentId: patentId });
+
+    if (!patentId) {
+      console.log('[useExecutionStatus] No patentId found, skipping update');
+      return;
+    }
+
+    // 워크플로우 상태를 PatentStatus로 변환
+    const newStatus = mapWorkflowToPatentStatus(state.overallStatus, state.currentStep);
+
+    // localStorage 업데이트
+    const result = updatePatentStatus(patentId, newStatus);
+
+    console.log(`[useExecutionStatus] Patent ${patentId} status updated to: ${newStatus}`, {
+      overallStatus: state.overallStatus,
+      currentStep: state.currentStep,
+      updateResult: !!result
+    });
+  }, [state, executionId, providedPatentId]);
 
   // 실제 API 호출 또는 Mock 데이터 반환
   const fetchStatus = useCallback(async () => {

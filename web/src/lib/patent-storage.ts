@@ -156,3 +156,41 @@ export const initializeWithSampleData = (): void => {
   // 샘플 데이터 초기화 비활성화 - 실제 제출된 데이터만 표시
   // 기존 localStorage 데이터가 있으면 유지, 없으면 빈 배열로 시작
 };
+
+// 오래된 "생성 중" 상태 특허 정리 (7일 이상 경과)
+export const cleanupStaleGeneratingPatents = (): number => {
+  const patents = getStoredPatents();
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+
+  const stalePatents = patents.filter(
+    p => p.status === 'generating' && p.createdAt < sevenDaysAgoStr
+  );
+
+  if (stalePatents.length > 0) {
+    // 오래된 생성 중 특허를 rejected로 변경 (타임아웃 처리)
+    stalePatents.forEach(p => {
+      updatePatentStatus(p.id, 'rejected');
+    });
+    console.log(`[cleanupStaleGeneratingPatents] Marked ${stalePatents.length} stale patents as rejected`);
+  }
+
+  return stalePatents.length;
+};
+
+// 모든 "생성 중" 특허를 "검수 대기"로 강제 업데이트 (마이그레이션용)
+export const migrateGeneratingToReviewing = (): number => {
+  const patents = getStoredPatents();
+  const generatingPatents = patents.filter(p => p.status === 'generating');
+
+  generatingPatents.forEach(p => {
+    updatePatentStatus(p.id, 'reviewing');
+  });
+
+  if (generatingPatents.length > 0) {
+    console.log(`[migrateGeneratingToReviewing] Migrated ${generatingPatents.length} patents to reviewing status`);
+  }
+
+  return generatingPatents.length;
+};
