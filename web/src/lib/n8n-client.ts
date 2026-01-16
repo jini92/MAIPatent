@@ -225,8 +225,8 @@ export async function exportPatentDocument(
   patentId: string,
   options: ExportOptions
 ): Promise<ExportResponse> {
-  // WF05: n8n UI에서 JSON import로 재생성하여 Production webhook 등록 완료
-  const response = await fetch(`${N8N_WEBHOOK_URL}/wf05-export-document`, {
+  // WF05: n8n Cloud webhook path는 wf05-export-v2 (2026-01-16 확인)
+  const response = await fetch(`${N8N_WEBHOOK_URL}/wf05-export-v2`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
