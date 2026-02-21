@@ -1,0 +1,6 @@
+﻿{
+  "project": "MAIPatent",
+  "description": "AI 특허 분석/관리",
+  "ecosystem": "MAI Universe",
+  "managed_by": "MAIBOT"
+}
