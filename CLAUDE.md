@@ -283,3 +283,29 @@ workflows/
 
 *문서 버전: 1.0.0*
 *작성일: 2026-01-10*
+
+## ⚠️ Regression Guard
+
+Critical settings must be protected with guard tests before this project has measurable AI/ML metrics.
+
+### Setup (when ready)
+`ash
+# Generate scaffold guard file
+python C:\MAIBOT\skills\regression-guard\scripts\init_guards.py \
+    --project-dir . \
+    --benchmark-json benchmarks/baseline.json
+`
+
+### Checklist (apply when implementing AI/ML pipeline)
+- [ ] Run full pipeline benchmark → record metrics in enchmarks/baseline.json
+- [ ] Create 	ests/test_regression_guard.py with guard tests for critical parameters
+- [ ] Document anti-patterns in enchmarks/baseline.json under nti_patterns
+- [ ] Run pytest tests/test_regression_guard.py -v before/after any pipeline change
+
+### Key Guard Patterns
+See C:\MAIBOT\skills\regression-guard\references\guard-patterns.md:
+1. Mode switch "same accuracy" — always benchmark full pipeline
+2. Quality filter hurts recall — measure before/after
+3. Falsy empty list — use is not None not truthiness
+4. Shared config leaks between components — separate provider configs
+5. Missing cache key params — include all mode-differentiating params
